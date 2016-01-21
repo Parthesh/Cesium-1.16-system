@@ -10,8 +10,11 @@
   <title>Hello World!</title>
   <script src="../../Build/Cesium/Cesium.js"></script>
   <script src="../GeoserverTerrainProvider.js" type="text/javascript"></script>
+  <script src="../measure_dist/jquery-1.10.2.js"></script>
+  <script src="../measure_dist/jquery-ui-1.11.4/jquery-ui.js"></script>
   <style>
       @import url(../../Build/Cesium/Widgets/widgets.css);
+      @import url(../measure_dist/jquery-ui-themes-1.11.4/themes/smoothness/jquery-ui.css);
       html, body, #cesiumContainer {
           width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
       }
@@ -26,7 +29,13 @@
 <body>
   <div id="cesiumContainer"></div>
   <div class="toolbar-left">
-  <button onclick="show()">Show<button>
+  <!--button onclick="show()">Show</button-->
+  <button onclick="proximity()">Proximity</button>
+  <button onclick="rem()">Remove All</button>
+  </div>
+  <div id="dialog1" title="Enter buffer in meters" height="100px" width="500px">
+		<input type="number" id="radius">
+		<p id="demo"></p>
   </div>
   <script>
 var viewer = new Cesium.Viewer('cesiumContainer');
@@ -36,59 +45,157 @@ var ellipsoid = viewer.scene.globe.ellipsoid;
 		//destination : viewer.entities
 	});
 	//var cesiumTerrainProviderMeshes = new Cesium.CesiumTerrainProvider({
-	/*var terrainProvider = new Cesium.GeoserverTerrainProvider({
+	var terrainProvider = new Cesium.GeoserverTerrainProvider({
 		//url : '//assets.agi.com/stk-terrain/world',
 		url : "http://localhost:8080/geoserver/elevation/wms",
 		//requestWaterMask : true,
 		//requestVertexNormals : true
 		layerName: "srtm_global_90m_tiled",
+		//waterMask : true
 	});
-	viewer.terrainProvider = terrainProvider;*/
+	viewer.terrainProvider = terrainProvider;
 	viewer.scene.globe.depthTestAgainstTerrain = true;
-	var centre_position;
-   function show() {	
-    var scene = viewer.scene;
-    var primitives = scene.primitives;
-    var ellipsoid = viewer.scene.ellipsoid;
-    //viewer.centralBody.depthTestAgainstTerrain = true;
- 
-    // Create sphere and position with model matrix
-	var radius = 500;
-	var height = -radius/2;
-    var centre_position = Cesium.Cartesian3.fromDegrees(78.3352765625, 21.173860625,0.0);
-    var spheremodelMatrix = Cesium.Matrix4.multiplyByTranslation(
-        Cesium.Transforms.eastNorthUpToFixedFrame(centre_position),
-        new Cesium.Cartesian3(0.0, 0.0, height),
-        new Cesium.Matrix4()
-    );
-    
-    var sphereGeometry = new Cesium.SphereGeometry({
-        vertexFormat : Cesium.VertexFormat.POSITION_AND_NORMAL,
-        position : centre_position,
-        radius : radius
-    });
+	//var centre_position;
+   /*function show() {	
+        var scene = viewer.scene;
+        var primitives = scene.primitives;
+        var ellipsoid = viewer.scene.ellipsoid;
+        //viewer.centralBody.depthTestAgainstTerrain = true;
+     
+        // Create sphere and position with model matrix
+         //var centre_position = Cesium.Cartesian3.fromDegrees(78.3352765625, 21.173860625,0.0);
+         //var centre_position = Cesium.Cartesian3.fromDegrees(86.9249842,27.9878093,0.0);
+         var centre_position = Cesium.Cartesian3.fromDegrees(78.3352765625, 21.173860625, 0);
+        var radius = 500;
+        var height = viewer.scene.globe.getHeight(Cesium.Cartographic.fromCartesian(centre_position))-(radius/2);
+       
+        var spheremodelMatrix = Cesium.Matrix4.multiplyByTranslation(
+            Cesium.Transforms.eastNorthUpToFixedFrame(centre_position),
+            new Cesium.Cartesian3(0.0, 0.0, height),
+            new Cesium.Matrix4()
+        );
+        
+        var sphereGeometry = new Cesium.SphereGeometry({
+            vertexFormat : Cesium.VertexFormat.POSITION_AND_NORMAL,
+            position : centre_position,
+            radius : radius
+        });
 
-    var sphereInstance = new Cesium.GeometryInstance({
-        geometry : sphereGeometry,
-        modelMatrix : spheremodelMatrix,
-        id : 'dome',
-        attributes : {
-            color : Cesium.ColorGeometryInstanceAttribute.fromColor(new Cesium.Color(1.0, 0.0, 0.0, 0.4))
-         }
-    });
-    
-    // Add sphere instance to primitives
-    var dome = new Cesium.Primitive({
-        geometryInstances : sphereInstance,
-        appearance : new Cesium.PerInstanceColorAppearance({
-            translucent : true//,
-            //closed : true
-        })
-    });
-    
-    primitives.add(dome);		
-    } 
+        var sphereInstance = new Cesium.GeometryInstance({
+            geometry : sphereGeometry,
+            modelMatrix : spheremodelMatrix,
+            id : 'dome',
+            attributes : {
+                color : Cesium.ColorGeometryInstanceAttribute.fromColor(new Cesium.Color(1.0, 0.0, 0.0, 0.4))
+             }
+        });
+        
+        // Add sphere instance to primitives
+        var dome = new Cesium.Primitive({
+            geometryInstances : sphereInstance,
+            appearance : new Cesium.PerInstanceColorAppearance({
+                translucent : true//,
+                //closed : true
+            })
+        });
+        
+        primitives.add(dome);
 
+        
+        
+    } */
+//////////////////////////////////////////////////////////////////////////////////
+function rem() {
+    //viewer.scene.primitives.removeAll();
+    viewer.entities.removeAll();
+}
+//////////////////////////////////////////////////////////////////////////////////
+//var id_count = 0;
+function proximity() {
+    	var scene = viewer.scene;
+        var primitives = scene.primitives;
+        var ellipsoid = viewer.scene.ellipsoid;
+        var radius;        
+        latlong_carto = [];
+
+		var handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+
+			handler.setInputAction(function (movement) {
+
+			var pickRay = viewer.scene.camera.getPickRay(movement.position);
+
+			var cartesian = viewer.scene.globe.pick(pickRay, viewer.scene);
+			if (cartesian) {
+					var cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+					console.log(Cesium.Math.toDegrees(cartographic.longitude),Cesium.Math.toDegrees(cartographic.latitude));
+					latlong_carto.push(cartographic);
+
+					viewer.entities.add({
+
+						position : cartesian,//Cesium.Cartesian3.fromRadians(cartographic.longitude, cartographic.latitude,theight),
+						point : {
+							pixelSize : 15,
+							color : Cesium.Color.GREEN
+							
+						}
+					});
+					
+                    $(function() {
+                    
+                    $( "#dialog1" ).dialog({
+                         // dialogClass: "alert",
+                          buttons: [
+                            {
+                              text: "CANCEL",
+                              click: function() {
+                                $( this ).dialog( "close" );
+                              }
+                            },
+                            {
+                              text: "SUBMIT",
+                              click: function()	{
+                                //dld();
+                                //download("Terrain_Profile.txt",DOWNLOAD_DATA);
+                                //document.getElementById("demo").innerHTML = "Calculating....Please Wait...";
+                                //submit();
+                                create_dome(Number(document.getElementById("radius").value));
+                                //show();
+                                $( this ).dialog( "close" );
+                              }
+                            }
+                          ] , height:'200',width:'500',modal:true
+                        });
+            
+                    });
+                
+                /*function submit() {
+                    radius = Number(document.getElementById("radius").value);
+                }*/
+                
+                
+                // Create dome
+                function create_dome(radius) {
+                            //var radius = 500;
+
+                          
+                        
+                            // Create entity dome
+                            viewer.entities.add({
+                                //name : 'Red sphere with black outline',
+                                position: cartesian,
+                                ellipsoid : {
+                                    radii : new Cesium.Cartesian3(radius, radius, radius),
+                                    material : Cesium.Color.RED.withAlpha(0.3),
+                                    //outline : true,
+                                    //outlineColor : Cesium.Color.BLACK
+                                }
+                            });
+                            
+                            
+                            }  
+            } 
+		}, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+}
   </script>
 </body>
 </html>
