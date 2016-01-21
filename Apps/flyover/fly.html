@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Use correct character set. -->
+  <meta charset="utf-8">
+  <!-- Tell IE to use the latest, best version (or Chrome Frame if pre-IE11). -->
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+  <!-- Make the application on mobile take up the full browser screen and disable user scaling. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+  <title>Hello World!</title>
+  <script src="../../Build/Cesium/Cesium.js"></script>
+  <script src="../GeoserverTerrainProvider.js" type="text/javascript"></script>
+  <style>
+      @import url(../../Build/Cesium/Widgets/widgets.css);
+      html, body, #cesiumContainer {
+          width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
+      }
+	  .toolbar-left {
+            display: block;
+            position: absolute;
+            top: 5px;
+            left: 5px;
+        }
+  </style>
+  
+  </head>
+<body>
+  <!--div id="cesiumContainer"></div-->
+  <div id="cesiumContainer"></div>
+  <!--div class="toolbar-left">
+   <button onclick="latlong()">Show Cartographic Position on Mouse Over</button>
+   <button onclick="labelhide()">Hide Cartographic Position</button>
+   <button onclick="initialView()">Initial View</button-->
+  <script>
+  
+  var viewer = new Cesium.Viewer('cesiumContainer');
+
+  // LOAD TERRAIN
+var terrainProvider = new Cesium.GeoserverTerrainProvider({
+		//proxy : new Cesium.DefaultProxy('proxy.php'),
+		//service : "WMS",
+        url : "http://localhost:8080/geoserver/elevation/wms",
+		
+        layerName: "SRTM_1km_512",
+		//hasStyledImage: false,
+		//styleName:"grayToColor",
+        //waterMask:true
+    });
+	
+	
+	viewer.terrainProvider = terrainProvider;
+  
+//var viewer = new Cesium.Viewer('cesiumContainer');
+
+var VirtualTour = function(positions){
+    this.tourArray = [];
+    this.load = function(positions){
+        for (var i = 0; i < positions.cameraPositions.length; i++){
+            positions[i] = positions.cameraPositions[i];
+            positions[i].destination = Cesium.Cartesian3.fromDegrees(positions[i].longitude, positions[i].latitude, positions[i].height);
+            positions[i].heading = Cesium.Math.toRadians(positions[i].heading);
+            positions[i].pitch = Cesium.Math.toRadians(positions[i].pitch);
+            this.tourArray[positions[i].id] = positions[i];
+        }
+    };
+    this.load(positions);    
+    this.tourExecuting = false;
+    this.nextPosition=1;
+    this.moveIncrement = 1;
+    this.timeInterval=10;
+    this.flyToWait = 6000;
+    this.setSpeedFactor = function(num){
+        this.moveIncrement = num*this.moveIncrement;
+    };
+
+
+    this.flyToRest = function(){
+        this.nextPosition++; 
+        var thisTour = this;
+        setTimeout(function(){thisTour.flyToNext();},this.flyToWait);
+
+    };
+    
+    this.flyToNext= function(){
+      
+            var camera = viewer.scene.camera;
+            
+            var geodesic = new Cesium.EllipsoidGeodesic();
+            var cart1 = Cesium.Cartographic.fromDegrees(this.tourArray[this.nextPosition-1].longitude,this.tourArray[this.nextPosition-1].latitude,this.tourArray[this.nextPosition-1].height);
+            var cart2 = Cesium.Cartographic.fromDegrees(this.tourArray[this.nextPosition].longitude,this.tourArray[this.nextPosition].latitude,this.tourArray[this.nextPosition].height);
+            geodesic.setEndPoints(cart1, cart2);
+            camera.setView({
+                heading : geodesic.startHeading,
+            });
+            var incGeodesic = new Cesium.EllipsoidGeodesic();
+            var distanceCovered = 0;
+            var thisTour = this;
+            this.flightListener = function() {
+
+                if (geodesic.surfaceDistance - distanceCovered < 1){ 
+                    thisTour.nextPosition++;                       
+                    if (thisTour.nextPosition === thisTour.tourArray.length){
+                        thisTour.end();
+                    }else{                   
+   
+                        cart1 = Cesium.Cartographic.fromDegrees(thisTour.tourArray[thisTour.nextPosition-1].longitude,thisTour.tourArray[thisTour.nextPosition-1].latitude,thisTour.tourArray[thisTour.nextPosition-1].height);
+                        cart2 = Cesium.Cartographic.fromDegrees(thisTour.tourArray[thisTour.nextPosition].longitude,thisTour.tourArray[thisTour.nextPosition].latitude,thisTour.tourArray[thisTour.nextPosition].height);
+                        geodesic.setEndPoints(cart1, cart2);
+                        camera.setView({
+                            heading : geodesic.startHeading,
+                            pitch : thisTour.tourArray[thisTour.nextPosition].pitch,
+                            roll : thisTour.tourArray[thisTour.nextPosition].roll,
+                        }); 
+                        distanceCovered = 0;
+                    }
+                }else {
+                    
+
+                    var currentPos = camera.positionCartographic;
+                    incGeodesic.setEndPoints(currentPos, cart2);
+                    camera.setView({
+                        heading : incGeodesic.startHeading,
+                        pitch : thisTour.tourArray[thisTour.nextPosition].pitch,
+                        roll : thisTour.tourArray[thisTour.nextPosition].roll,                        
+                    });                
+                    camera.moveForward(thisTour.moveIncrement);
+                    distanceCovered = distanceCovered+thisTour.moveIncrement;
+
+                }
+            };
+            viewer.clock.onTick.addEventListener(thisTour.flightListener);        
+            
+
+    };
+    this.start = function(){
+        try {
+            if (this.tourExecuting) {return;} 
+            this.tourExecuting = true;
+            this.nextPosition=1;
+            this.startPosition = {};
+            this.startPosition.destination = Cesium.Cartesian3.clone(viewer.scene.camera.positionWC);
+            this.startPosition.heading = viewer.scene.camera.heading;
+            this.startPosition.pitch = viewer.scene.camera.pitch;
+            this.startPosition.roll = viewer.scene.camera.roll;            
+            viewer.scene.camera.flyTo({
+                destination : this.tourArray[this.nextPosition].destination,
+                duration : 5,
+                complete : this.flyToRest.call(this),            
+                orientation : {
+                    heading: this.tourArray[this.nextPosition].heading,
+                    pitch: this.tourArray[this.nextPosition].pitch,
+                    roll: this.tourArray[this.nextPosition].roll,
+                }              
+            });         
+        }catch(err) {
+            this.tourExecuting = false;
+        }
+                
+    };  
+    this.end = function(){
+        try {
+            this.nextPosition=0;
+            this.tourExecuting=false;
+            viewer.clock.onTick.removeEventListener(this.flightListener);              
+            viewer.scene.camera.flyTo({
+                destination : this.startPosition.destination,
+ 
+                duration : 5,
+         
+                orientation : {
+                    heading: this.startPosition.heading,
+                    pitch: this.startPosition.pitch,
+                    roll: this.startPosition.roll,
+                }              
+            });              
+     
+        }catch(err) {
+            this.tourExecuting = false;
+        }
+    };
+    
+};
+
+function tourExecuting(){
+    return sanMarcosTour.tourExecuting;
+}
+
+
+var positions = {"cameraPositions":[
+    {   "id":1, 
+        "name":"SR78 Begin", 
+        "longitude":-117.3519015, 
+        "latitude":33.1766404, 
+        "height":500.0, 
+        "heading":100.0, 
+        "pitch":-10.0, 
+        "roll":0.0
+    },
+    {   "id":2, 
+        "name":"", 
+        "longitude":-117.3492408, 
+        "latitude":33.1782388, 
+        "height":500.0, 
+        "heading":100.0, 
+        "pitch":-10.0, 
+        "roll":0.0
+    },
+    {   "id":3, 
+        "name":"", 
+        "longitude":-117.3460436, 
+        "latitude":33.1801246, 
+        "height":500.0, 
+        "heading":100.0, 
+        "pitch":-10.0, 
+        "roll":0.0
+    },
+    {   "id":4, 
+        "name":"", 
+        "longitude":-117.3431897, 
+        "latitude":33.1810046, 
+        "height":500.0, 
+        "heading":100.0, 
+        "pitch":-10.0, 
+        "roll":-0.1
+    },
+    {   "id":5, 
+        "name":"", 
+        "longitude":-117.3400569, 
+        "latitude":33.1811662, 
+        "height":500.0, 
+        "heading":50.0, 
+        "pitch":-10.0, 
+        "roll":0.0
+    },
+    {   "id":6, 
+        "name":"", 
+        "longitude":-117.3364305, 
+        "latitude":33.1811303, 
+        "height":500.0, 
+        "heading":100.0, 
+        "pitch":-10.0, 
+        "roll":0.0
+    },
+    {   "id":7, 
+        "name":"", 
+        "longitude":-117.3293495, 
+        "latitude":33.1812021, 
+        "height":500.0, 
+        "heading":100.0, 
+        "pitch":-10.0, 
+        "roll":0.0
+    },
+    {   "id":8, 
+        "name":"El Camino Real and SR78", 
+        "longitude":-117.3269892, 
+        "latitude":33.1816331, 
+        "height":500.0, 
+        "heading":100.0, 
+        "pitch":-10.0, 
+        "roll":0.0
+    },
+    {   "id":9, 
+        "name":"", 
+        "longitude":-117.3227835, 
+        "latitude":33.1822258, 
+        "height":500.0, 
+        "heading":100.0, 
+        "pitch":-10.0, 
+        "roll":0.0
+    }    
+]}  ; 
+var sanMarcosTour = new VirtualTour(positions);                    
+
+/*
+var sanMarcosTour = {};
+jQuery.getJSON( "resources/SanMarcosTour.json", function( positions ) {
+    sanMarcosTour = new VirtualTour(positions);    
+});  
+
+*/
+function SanMarcosTour(){
+    if (tourExecuting()) {return;    }
+    sanMarcosTour.setSpeedFactor(2);
+    sanMarcosTour.start();
+}
+SanMarcosTour();
+
+ </script>
+</body>
+</html>
+

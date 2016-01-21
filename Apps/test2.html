@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Use correct character set. -->
+  <meta charset="utf-8">
+  <!-- Tell IE to use the latest, best version. -->
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <!-- Make the application on mobile take up the full browser screen and disable user scaling. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+  <title>Hello World!</title>
+  <script src="../Build/Cesium/Cesium.js"></script>
+  <script src="http://localhost/Cesium/Cesium-1.16/Apps/GeoserverTerrainProvider.js" type="text/javascript"></script>
+<style>
+      @import url(../Build/Cesium/Widgets/widgets.css);
+      html, body, #cesiumContainer {
+          width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
+      }
+	  .toolbar-left {
+            display: block;
+            position: absolute;
+            top: 100px;
+            right: 5px;
+        }
+  </style>
+</head>
+<body>
+  <div id="cesiumContainer"></div>
+  <div class="toolbar-left">
+  <button onclick="show()">Show<button>
+  </div>
+ <script>
+    var viewer = new Cesium.Viewer('cesiumContainer');
+    viewer.camera.setView({
+		destination : Cesium.Cartesian3.fromDegrees(78.3352765625, 21.173860625, 6900000)
+	});
+	//var cesiumTerrainProviderMeshes = new Cesium.CesiumTerrainProvider({
+	var terrainProvider = new Cesium.GeoserverTerrainProvider({
+		//url : '//assets.agi.com/stk-terrain/world',
+		url : "http://localhost:8080/geoserver/elevation/wms",
+		//requestWaterMask : true,
+		//requestVertexNormals : true
+		layerName: "srtm_global_90m_tiled",
+	});
+	//viewer.terrainProvider = cesiumTerrainProviderMeshes;
+	viewer.terrainProvider = terrainProvider;
+    /*Sandcastle.addToolbarButton('Show Height', function() {
+    var pt = Cesium.Cartographic.fromDegrees(6.8832, 45.9452);
+    console.log(pt);
+    var ht = viewer.scene.globe.getHeight(pt);
+    console.log(ht);
+    viewer.entities.add({
+    	position : Cesium.Cartesian3.fromRadians(pt.longitude, pt.latitude,ht),
+    	point : {
+    		pixelSize : 15,
+    		color : Cesium.Color.RED
+     			}
+	});
+    });//Sandcastle_End*/
+	
+	var handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+			handler.setInputAction(function (movement) {
+			var cartesian = viewer.camera.pickEllipsoid(movement.position, viewer.scene.globe.ellipsoid);
+			var pickRay = viewer.scene.camera.getPickRay(movement.position);
+			startMousePosition = viewer.scene.globe.pick(pickRay, viewer.scene);
+			if (startMousePosition) {
+					//var cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+					//latlong_carto.push(cartographic);
+					//choosen_pts.show = true;
+					viewer.entities.add({
+						//parent : choosen_pts,
+						position : startMousePosition,//Cesium.Cartesian3.fromRadians(cartographic.longitude, cartographic.latitude,theight),
+						point : {
+							pixelSize : 15,
+							color : Cesium.Color.RED
+							
+						}
+						});
+				}
+					/*if (latlong_carto.length>=2) {
+					    LINE_DRAWN = false;
+						CLICKED = true;	
+					}						
+				} else {
+					entity.label.show = false;
+				} */
+		}, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+	
+
+</script>
+</body>
+</html>

@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Use correct character set. -->
+  <meta charset="utf-8">
+  <!-- Tell IE to use the latest, best version (or Chrome Frame if pre-IE11). -->
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+  <!-- Make the application on mobile take up the full browser screen and disable user scaling. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+  <title>Hello World!</title>
+  <script src="../../Build/Cesium/Cesium.js"></script>
+  <script src="../GeoserverTerrainProvider.js" type="text/javascript"></script>
+  <style>
+      @import url(../../Build/Cesium/Widgets/widgets.css);
+      html, body, #cesiumContainer {
+          width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
+      }
+	  .toolbar-left {
+            display: block;
+            position: absolute;
+            top: 5px;
+            left: 5px;
+        }
+		#altContainer {
+            background-color: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 0 2px;
+        }
+
+        #altContainer label {
+            line-height: 1em;
+        }
+  </style>
+  
+  </head>
+<body>
+  <!--div id="cesiumContainer"></div-->
+  <div id="cesiumContainer"></div>
+  <div class="toolbar-left">
+   <button onclick="latlong()">Show Cartographic Position on Mouse Over</button>
+   <button onclick="labelhide()">Hide Cartographic Position</button>
+   <button onclick="initialView()">Initial View</button>
+  <script>
+  
+  var viewer = new Cesium.Viewer('cesiumContainer', {
+    selectionIndicator : false,
+    infoBox : false
+});
+//var viewer = new Cesium.Viewer('cesiumContainer');
+var scene = viewer.scene;
+var ps=new Cesium.Cartographic.fromDegrees(78.3352765625, 21.173860625, 6900000);
+scene.camera.setView({positionCartographic : ps});
+
+var handler;
+var entity = viewer.entities.add({
+        label : {
+            show : false
+        }});			
+		
+// LOAD LAYER		
+var url='http://bhuvan3.nrsc.gov.in/tilecache/tilecache.py?'; //Service URL
+var layers = viewer.scene.globe.imageryLayers;
+    layers.removeAll();
+    layers.addImageryProvider(new Cesium.WebMapServiceImageryProvider({
+		//proxy : new Cesium.DefaultProxy('proxy.php'),
+        url : url,        
+        layers: 'bhuvan_imagery'
+    }));
+
+//Sandcastle.finishedLoading();
+
+
+// LOAD TERRAIN
+var terrainProvider = new Cesium.GeoserverTerrainProvider({
+		//proxy : new Cesium.DefaultProxy('proxy.php'),
+		//service : "WMS",
+        url : "http://localhost:10000/geoserver/elevation/wms",
+		
+        layerName: "indiapyramid1"
+		//hasStyledImage: false,
+		//styleName:"grayToColor",
+        //waterMask:true
+    });
+	
+	
+	viewer.terrainProvider = terrainProvider;
+	viewer.dataSources.add(Cesium.KmlDataSource.load('hyd_built.kmz'));
+ function latlong() {
+    var ellipsoid = scene.globe.ellipsoid;
+    
+
+// Mouse over the globe to see the cartographic position
+    handler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
+    handler.setInputAction(function(movement) {
+        var cartesian = viewer.camera.pickEllipsoid(movement.endPosition, ellipsoid);
+        if (cartesian) {
+            var cartographic = ellipsoid.cartesianToCartographic(cartesian);
+            var longitudeString = Cesium.Math.toDegrees(cartographic.longitude).toFixed(5);
+            var latitudeString = Cesium.Math.toDegrees(cartographic.latitude).toFixed(5);
+			var ray = viewer.camera.getPickRay(movement.endPosition);
+            var position = viewer.scene.globe.pick(ray, viewer.scene);
+			var positionCartographic = Cesium.Ellipsoid.WGS84.cartesianToCartographic(position);
+			var theight = positionCartographic.height.toFixed(2);
+            entity.position = cartesian;
+			entity.label.show = true;
+			entity.label.text = '(' + longitudeString + ', ' + latitudeString + ' , ' + theight + ')';
+				
+        } else {
+            entity.label.show = false;
+        }
+    }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+	
+}
+latlong();
+
+function labelhide(){
+	handler.setInputAction(function(movement) {
+	entity.label.show = false;
+	}
+	)
+}
+
+function initialView() {
+		//var ps=new Cesium.Cartographic.fromDegrees(78.3352765625, 21.173860625, 6900000);
+		//viewer.scene.camera.setView({positionCartographic : ps});
+		//var cesiumWidget = new Cesium.CesiumWidget('cesiumContainer', {scene3DOnly: true});
+        //var scene = cesiumWidget.scene;
+		scene.camera.flyTo({
+			destination : Cesium.Cartesian3.fromDegrees(78.3352765625, 21.173860625, 6900000)
+		});
+	}
+
+/*Sandcastle.addDefaultToolbarButton('Show Cartographic Position on Mouse Over', function() {
+    var ellipsoid = scene.globe.ellipsoid;
+    var entity = viewer.entities.add({
+        label : {
+            show : false
+        }
+    });
+
+    // Mouse over the globe to see the cartographic position
+    handler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
+    handler.setInputAction(function(movement) {
+        var cartesian = viewer.camera.pickEllipsoid(movement.endPosition, ellipsoid);
+        if (cartesian) {
+            var cartographic = ellipsoid.cartesianToCartographic(cartesian);
+            var longitudeString = Cesium.Math.toDegrees(cartographic.longitude).toFixed(2);
+            var latitudeString = Cesium.Math.toDegrees(cartographic.latitude).toFixed(2);
+
+            entity.position = cartesian;
+            entity.label.show = true;
+            entity.label.text = '(' + longitudeString + ', ' + latitudeString + ')';
+        } else {
+            entity.label.show = false;
+        }
+    }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+});
+
+Sandcastle.addToolbarButton('Pick Entity', function() {
+    var entity = viewer.entities.add({
+        position : Cesium.Cartesian3.fromDegrees(-75.59777, 40.03883),
+        billboard : {
+            image : '../images/Cesium_Logo_overlay.png'
+        }
+    });
+
+    // If the mouse is over the billboard, change its scale and color
+    handler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
+    handler.setInputAction(function(movement) {
+        var pickedObject = scene.pick(movement.endPosition);
+        if (Cesium.defined(pickedObject) && (pickedObject.id === entity)) {
+            entity.billboard.scale = 2.0;
+            entity.billboard.color = Cesium.Color.YELLOW;
+        } else {
+            entity.billboard.scale = 1.0;
+            entity.billboard.color = Cesium.Color.WHITE;
+        }
+    }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+});
+
+Sandcastle.addToolbarButton('Drill-Down Picking', function() {
+    var pickedEntities = new Cesium.EntityCollection();
+    var pickColor = Cesium.Color.YELLOW.withAlpha(0.5);
+    function makeProperty(entity, color) {
+        var colorProperty = new Cesium.CallbackProperty(function(time, result) {
+            if (pickedEntities.contains(entity)) {
+                return pickColor.clone(result);
+            }
+            return color.clone(result);
+        }, false);
+
+        entity.polygon.material = new Cesium.ColorMaterialProperty(colorProperty);
+    }
+
+    var red = viewer.entities.add({
+        polygon : {
+            hierarchy : Cesium.Cartesian3.fromDegreesArray([-70.0, 30.0,
+                                                            -60.0, 30.0,
+                                                            -60.0, 40.0,
+                                                            -70.0, 40.0])
+        }
+    });
+    makeProperty(red, Cesium.Color.RED.withAlpha(0.5));
+
+    var blue = viewer.entities.add({
+        polygon : {
+            hierarchy : Cesium.Cartesian3.fromDegreesArray([-75.0, 34.0,
+                                                            -63.0, 34.0,
+                                                            -63.0, 40.0,
+                                                            -75.0, 40.0])
+        }
+    });
+    makeProperty(blue, Cesium.Color.BLUE.withAlpha(0.5));
+
+    var green = viewer.entities.add({
+        polygon : {
+            hierarchy : Cesium.Cartesian3.fromDegreesArray([-67.0, 36.0,
+                                                            -55.0, 36.0,
+                                                            -55.0, 30.0,
+                                                            -67.0, 30.0])
+        }
+    });
+    makeProperty(green, Cesium.Color.GREEN.withAlpha(0.5));
+
+    // Move the primitive that the mouse is over to the top.
+    handler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
+    handler.setInputAction(function(movement) {
+        // get an array of all primitives at the mouse position
+        var pickedObjects = scene.drillPick(movement.endPosition);
+        if (Cesium.defined(pickedObjects)) {
+            //Update the collection of picked entities.
+            pickedEntities.removeAll();
+            for (var i = 0; i < pickedObjects.length; ++i) {
+                var entity = pickedObjects[i].id;
+                pickedEntities.add(entity);
+            }
+        }
+
+    }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+});
+
+Sandcastle.addToolbarButton('Pick position', function() {
+    var ellipsoid = scene.globe.ellipsoid;
+    
+    var modelEntity = viewer.entities.add({
+        name : 'milktruck',
+        position : Cesium.Cartesian3.fromDegrees(-123.0744619, 44.0503706),
+        model : {
+            uri : '../../SampleData/models/CesiumMilkTruck/CesiumMilkTruck-kmc.gltf'
+        }
+    });
+    viewer.zoomTo(modelEntity);
+    
+    var labelEntity = viewer.entities.add({
+        label : {
+            show : false,
+            horizontalOrigin : Cesium.HorizontalOrigin.LEFT
+        }
+    });
+
+    // Mouse over the globe to see the cartographic position
+    handler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
+    handler.setInputAction(function(movement) {
+        var foundPosition = false;
+        
+        var scene = viewer.scene;
+        var pickedObject = scene.pick(movement.endPosition);
+        if (scene.pickPositionSupported && Cesium.defined(pickedObject) && pickedObject.id === modelEntity) {
+            var cartesian = viewer.scene.pickPosition(movement.endPosition);
+            
+            if (Cesium.defined(cartesian)) {
+                var cartographic = ellipsoid.cartesianToCartographic(cartesian);
+                var longitudeString = Cesium.Math.toDegrees(cartographic.longitude).toFixed(2);
+                var latitudeString = Cesium.Math.toDegrees(cartographic.latitude).toFixed(2);
+                var heightString = cartographic.height.toFixed(2);
+    
+                labelEntity.position = cartesian;
+                labelEntity.label.show = true;
+                labelEntity.label.text = '(' + longitudeString + ', ' + latitudeString + ', ' + heightString + ')';
+                
+                var camera = scene.camera;
+                labelEntity.label.eyeOffset = new Cesium.Cartesian3(0.0, 0.0, camera.frustum.near * 1.5 - Cesium.Cartesian3.distance(cartesian, camera.position));
+                
+                foundPosition = true;
+            }
+        }
+        
+        if (!foundPosition) {
+            labelEntity.label.show = false;
+        }
+    }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+});
+
+Sandcastle.reset = function() {
+    viewer.entities.removeAll();
+    handler = handler && handler.destroy();
+};*/
+ </script>
+</body>
+</html>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>BHUVAN 3D Demo 1</title>
+		<script src="../../Build/Cesium/Cesium.js"></script>
+		<script src="DrawHelper.js"></script>
+		<script src="src1.js"></script>
+		<script src="../GeoserverTerrainProvider.js" type="text/javascript"></script>
+				
+			<style>
+				@import url(../../Build/Cesium/Widgets/widgets.css);
+		  
+				@import url(DrawHelper.css);
+				#cesiumContainer {
+					position: absolute;
+					top: 0px;
+					left: 0;
+					height: 100%;
+					width: 100%;
+					margin: 0;
+					overflow: hidden;
+					padding: 0;
+					font-family: sans-serif;
+				}
+				#toolbar {
+					position: absolute;
+					top: 20px;
+					left: 5px;
+					display: inline;
+					margin: 10px;
+					padding: 0px;
+					background: white;
+				}
+				#logging {
+					position: absolute;
+					bottom: 0px;
+					right: 0;
+					display: inline;
+					margin: 10px;
+					padding: 10px;
+					background: white;
+				}
+
+				body {
+					padding: 0;
+					margin: 0;
+					overflow: hidden;
+				}
+				.toolbar-left {
+				display: block;
+				position: absolute;
+				top: 5px;
+				left: 5px;
+			}
+			</style>
+						
+	</head>
+	
+	<body onload="start()">
+
+		<div id="cesiumContainer"></div>
+		<div id="toolbar"></div>
+		<div class="toolbar-left">
+			<button onclick="initialView()">Initial View</button>
+			<button onclick="latlong()">Position</button>
+			<button onclick="czml_show()">CZML models</button>
+			<button onclick="kml_show()">KML models</button>
+		</div>
+		<div id="logging">
+		</div>
+
+		<script>
+			//var position = movement.endPosition;
+			var viewer = new Cesium.Viewer('cesiumContainer', {scene3DOnly: true});
+			var scene = viewer.scene;
+			var ps=new Cesium.Cartographic.fromDegrees(78.3352765625, 21.173860625, 6900000);
+			scene.camera.setView({positionCartographic : ps});
+			
+
+
+		// LOAD TERRAIN
+/*		var terrainProvider = new Cesium.GeoserverTerrainProvider({
+				//proxy : new Cesium.DefaultProxy('proxy.php'),
+				//service : "WMS",
+				url : "http://localhost:8080/geoserver/elevation/wms",
+				
+				layerName: "SRTM_1km",
+				//hasStyledImage: false,
+				//styleName:"grayToColor",
+				//waterMask:true
+			});
+			
+			
+			viewer.terrainProvider = terrainProvider;
+			
+			
+			
+			// CZML models
+			viewer.dataSources.add(Cesium.CzmlDataSource.load('feature.czml'));
+			function czml_show(){
+			
+				scene.camera.flyTo({
+					  destination: Cesium.Cartesian3.fromDegrees(-123.9341201, 49.155, 5000),
+					  duration : 4.0, 
+					  complete : function() {
+							// called when the flight finishes
+							scene.camera.lookUp(Cesium.Math.toRadians(55));
+						}
+					 });
+			}
+			
+			
+			// KML Models
+			viewer.dataSources.add(Cesium.KmlDataSource.load('hyd_buildings.kml'));
+				function kml_show(){
+					
+					scene.camera.flyTo({
+						  destination: Cesium.Cartesian3.fromDegrees(78.35882,17.45003, 1000),
+						  duration : 4.0, 
+						  complete : function() {
+								// called when the flight finishes
+								scene.camera.lookUp(Cesium.Math.toRadians(60));
+							}
+						 });
+				}
+*/			
+			
+			function initialView() {
+				scene.camera.flyTo({
+					destination : Cesium.Cartesian3.fromDegrees(78.3352765625, 21.173860625, 6900000)
+				});
+			}
+
+			
+		// lat, long and altitude
+					
+			function latlong() {		
+					
+					var ellipsoid = scene.globe.ellipsoid;
+					var entity = viewer.entities.add({
+						label : {
+							show : false
+						}});		
+					
+						// Mouse over the globe to see the cartographic position
+						handler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
+						handler.setInputAction(function(movement) {
+						var cartesian = scene.camera.pickEllipsoid(movement.endPosition, ellipsoid);
+							if (cartesian) {
+								var cartographic = ellipsoid.cartesianToCartographic(cartesian);
+								var longitudeString = Cesium.Math.toDegrees(cartographic.longitude).toFixed(5);
+								var latitudeString = Cesium.Math.toDegrees(cartographic.latitude).toFixed(5);
+								var ray = scene.camera.getPickRay(movement.endPosition);
+								var position = scene.globe.pick(ray, scene);
+								var positionCartographic = Cesium.Ellipsoid.WGS84.cartesianToCartographic(position);
+								//var span = document.getElementById('altData');
+								var theight = positionCartographic.height.toFixed(2);
+								entity.position = cartesian;
+								entity.label.show = true;
+								entity.label.text = '(' + longitudeString + ', ' + latitudeString + ' , ' + theight + ')';
+								//console.log("lat= "+(latitudeString)+"°; long="+(longitudeString)+"°; altitude="+theight+" meters")
+						
+							} else {
+									entity.label.show = false;
+								}
+						}, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+			
+			}
+
+		</script>
+
+	</body>
+</html>

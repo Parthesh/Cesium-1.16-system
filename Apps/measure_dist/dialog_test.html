@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>jQuery UI Dialog - Default functionality</title>
+	<script src="jquery-1.10.2.js"></script>
+  <script src="jquery-ui-1.11.4/jquery-ui.js"></script>
+  <style>
+	@import url(jquery-ui-themes-1.11.4/themes/smoothness/jquery-ui.css);
+  </style>
+</head>
+<body>
+	<button onclick="show()">SHOW THE DIALOG BOX</button>
+	<div id="dialog" title="Enter Sampling distance in meters">
+		<div id="tester" style="width:512px;height:512px;"></div>
+		<input type="number" id="sample_dist">
+	</div>
+<script>
+	function show() {
+		$(function() {
+			
+			$( "#dialog" ).dialog({
+				 // dialogClass: "alert",
+				  buttons: [
+					{
+					  text: "CANCEL",
+					  click: function() {
+						$( this ).dialog( "close" );
+					  }
+					},
+					{
+					  text: "SUBMIT",
+					  click: function()	{
+						//dld();
+						//download("Terrain_Profile.txt",DOWNLOAD_DATA);
+						submit();
+					  }
+					}
+				  ] , height:'auto',width:'auto',modal:true
+				});
+				
+				
+		});
+			 var x;
+			function submit() {
+				x = document.getElementById("sample_dist").value;
+				document.getElementById("dialog").innerHTML = "You typed " + x;
+			}
+		/*TESTER = document.getElementById('tester');
+		Plotly.plot( TESTER, [{
+		x: [1, 2, 3, 4, 5],
+		y: [1, 2, 4, 8, 16] }], {
+		margin: { t: 0 } } );*/
+	}
+	
+</script>
+</body>
+</html>

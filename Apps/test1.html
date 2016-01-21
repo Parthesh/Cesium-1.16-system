@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<body>
+<canvas id="can"></canvas>
+<h1>My First JavaScript</h1>
+
+<button type="button"
+onclick="document.getElementById('demo').innerHTML = Date()">
+Click me to display Date and Time.</button>
+
+<p id="demo"></p>
+
+</body>
+<script>
+	var canvas = document.getElementById("can");
+	canvas.width = window.innerWidth;
+	canvas.height = window.innerHeight;
+</script>
+</html>

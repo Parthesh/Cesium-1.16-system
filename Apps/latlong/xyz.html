@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Use correct character set. -->
+  <meta charset="utf-8">
+  <!-- Tell IE to use the latest, best version (or Chrome Frame if pre-IE11). -->
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+  <!-- Make the application on mobile take up the full browser screen and disable user scaling. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+  <title>Hello World!</title>
+  <script src="../../Build/Cesium/Cesium.js"></script>
+  <script src="../GeoserverTerrainProvider.js" type="text/javascript"></script>
+  <style>
+      @import url(../../Build/Cesium/Widgets/widgets.css);
+      html, body, #cesiumContainer {
+          width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
+      }
+	  .toolbar-left {
+            display: block;
+            position: absolute;
+            top: 5px;
+            left: 5px;
+        }
+  </style>
+  
+  </head>
+<body>
+  <!--div id="cesiumContainer"></div-->
+  <div id="cesiumContainer"></div>
+  <div class="toolbar-left">
+   <button onclick="latlong()">Show Cartographic Position on Mouse Over</button>
+   <button onclick="labelhide()">Hide Cartographic Position</button>
+   <button onclick="initialView()">Initial View</button>
+  <script>
+  
+  var viewer = new Cesium.Viewer('cesiumContainer', {
+    selectionIndicator : false,
+    infoBox : false
+});
+//var viewer = new Cesium.Viewer('cesiumContainer');
+var scene = viewer.scene;
+var ps=new Cesium.Cartographic.fromDegrees(78.3352765625, 21.173860625, 6900000);
+scene.camera.setView({positionCartographic : ps});
+
+var handler;
+var entity = viewer.entities.add({
+        label : {
+            show : false
+        }});			
+
+//var mycarto = new Cesium.Cartographic();	
+
+// LOAD LAYER		
+/*var url='http://bhuvan3.nrsc.gov.in/tilecache/tilecache.py?'; //Service URL
+var layers = viewer.scene.globe.imageryLayers;
+    layers.removeAll();
+    layers.addImageryProvider(new Cesium.WebMapServiceImageryProvider({
+		//proxy : new Cesium.DefaultProxy('proxy.php'),
+        url : url,        
+        layers: 'bhuvan_imagery'
+    }));
+*/
+
+// LOAD TERRAIN
+var terrainProvider = new Cesium.GeoserverTerrainProvider({
+		//proxy : new Cesium.DefaultProxy('proxy.php'),
+		//service : "WMS",
+        url : "http://localhost:8080/geoserver/elevation/wms",
+		
+        layerName: "indiapyramid1",
+		//hasStyledImage: false,
+		//styleName:"grayToColor",
+        //waterMask:true
+    });
+	
+	
+	viewer.terrainProvider = terrainProvider;	
+
+ function latlong() {
+    var ellipsoid = scene.globe.ellipsoid;
+    
+
+// Mouse over the globe to see the cartographic position
+    handler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
+    handler.setInputAction(function(movement) {
+        var cartesian = viewer.camera.pickEllipsoid(movement.endPosition, ellipsoid);
+        if (cartesian) {
+            var cartographic = ellipsoid.cartesianToCartographic(cartesian);
+            var longitudeString = Cesium.Math.toDegrees(cartographic.longitude).toFixed(5);
+            var latitudeString = Cesium.Math.toDegrees(cartographic.latitude).toFixed(5);
+			var ray = viewer.camera.getPickRay(movement.endPosition);
+            var position = viewer.scene.globe.pick(ray, viewer.scene);
+			var positionCartographic = Cesium.Ellipsoid.WGS84.cartesianToCartographic(position);
+			var theight = positionCartographic.height.toFixed(2);
+            entity.position = cartesian;
+			entity.label.show = true;
+			entity.label.text = '(' + longitudeString + ', ' + latitudeString + ' , ' + theight + ')';
+				
+        } else {
+            entity.label.show = false;
+        }
+    },Cesium.ScreenSpaceEventType.MOUSE_MOVE);//Cesium.ScreenSpaceEventType.LEFT_CLICK); 
+	
+}
+
+
+function labelhide(){
+	handler.setInputAction(function(movement) {
+	entity.label.show = false;
+	}
+	)
+}
+
+function initialView() {
+		scene.camera.flyTo({
+			destination : Cesium.Cartesian3.fromDegrees(78.3352765625, 21.173860625, 6900000)
+		});
+	}
+
+
+ </script>
+</body>
+</html>
+

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head><title>Canvas code example</title>
+  <link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+  <script src="//code.jquery.com/jquery-1.10.2.js"></script>
+  <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+  <script type="text/javascript" src="plotly-latest.min.js"></script>
+</head>
+<body>
+	<!--canvas id="canvas" width="512" height="512"></canvas-->
+	<div id="dialog" title="Basic dialog" >
+		  <div id="tester" style="width:512px;height:512px;">
+			  <script>
+				TESTER = document.getElementById('tester');
+						Plotly.plot( TESTER, [{
+						x: [1, 2, 3, 4, 5],
+						y: [1, 2, 4, 8, 16] }], {
+						margin: { t: 0 } } );
+			  </script>
+		  </div>  
+	</div>
+<script>
+	$(function() {
+				//$( "#dialog" ).dialog({height:'auto', width:'auto',modal:true});
+				$( "#dialog" ).dialog({
+					  dialogClass: "no-close",
+					  buttons: [
+						{
+						  text: "OK",
+						  click: function() {
+							$( this ).dialog( "close" );
+						  }
+						}
+					  ] , height:'auto',width:'auto',modal:true
+					});
+					
+	});
+
+
+
+
+	/*TESTER = document.getElementById('tester');
+		Plotly.plot( TESTER, [{
+		x: [1, 2, 3, 4, 5],
+		y: [1, 2, 4, 8, 16] }], {
+		margin: { t: 0 } } );*/
+		
+</script>
+</body>
+</html>

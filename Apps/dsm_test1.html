@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Use correct character set. -->
+  <meta charset="utf-8">
+  <!-- Tell IE to use the latest, best version (or Chrome Frame if pre-IE11). -->
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+  <!-- Make the application on mobile take up the full browser screen and disable user scaling. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+  <title>Hello World!</title>
+  <script src="../Build/Cesium/Cesium.js"></script>
+  <script src="GeoserverTerrainProvider.js" type="text/javascript"></script>
+  <style>
+      @import url(../Build/Cesium/Widgets/widgets.css);
+      html, body, #cesiumContainer {
+          width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
+      }
+  </style>
+</head>
+<body>
+  <div id="cesiumContainer"></div>
+  <script>
+    var viewer = new Cesium.Viewer('cesiumContainer');
+	
+	// LOAD LAYER
+var url='http://bhuvan3.nrsc.gov.in/tilecache/tilecache.py?'; //Service URL
+//var url='http://localhost:10000/geoserver/elevation/wms';
+var layers = viewer.scene.globe.imageryLayers;
+    //layers.removeAll();
+    layers.addImageryProvider(new Cesium.WebMapServiceImageryProvider({
+		//proxy : new Cesium.DefaultProxy('proxy.php'),
+        url : url,        
+        layers: 'bhuvan_imagery'
+		//layers : 'giant_polygon'
+    }));
+
+//Sandcastle.finishedLoading();
+
+
+// LOAD TERRAIN
+var terrainProvider = new Cesium.GeoserverTerrainProvider({
+		//proxy : new Cesium.DefaultProxy('proxy.php'),
+		//service : "WMS",
+        url : "http://localhost:10000/geoserver/elevation/wms",
+		
+        layerName: "carto10m",
+		//hasStyledImage: false,
+		//styleName:"grayToColor",
+        //waterMask:true
+		
+		maxLevel: 20,
+                 service: "WMS",
+                 formatArray: {
+                            format: "image/bil",
+                            postProcessArray: function(bufferIn, size, highest, lowest, offset) {
+                                var resultat;
+                                var viewerIn = new DataView(bufferIn);
+                                var littleEndianBuffer = new ArrayBuffer(size.height * size.width * 4);
+                                var viewerOut = new DataView(littleEndianBuffer);
+                                if (littleEndianBuffer.byteLength === bufferIn.byteLength) {
+                                    var temp, goodCell = 0,
+                                        somme = 0;
+                                    for (var i = 0; i < littleEndianBuffer.byteLength; i += 4) {
+                                        temp = viewerIn.getFloat32(i, false) - offset;
+                                        if (temp > lowest && temp < highest) {
+// needed for big Endian 
+                                            viewerOut.setFloat32(i, temp, true);
+											//viewerOut.setFloat32(i, temp, false);
+//for little Endian, there is no need to switch byte so the code should be  viewerOut.setFloat32(i, temp, false);
+                                            somme += temp;
+                                            goodCell++;
+                                        } else {
+                                            var val = (goodCell == 0 ? 1 : somme / goodCell);
+// needed for big Endian
+                                            viewerOut.setFloat32(i, val, true);
+											//viewerOut.setFloat32(i, val, false);
+//for little Endian, there is no need to switch byte so the code should be  viewerOut.setFloat32(i, val, false);
+                                        }
+                                    }
+                                    resultat = new Float32Array(littleEndianBuffer);
+                                }
+                                return resultat;
+                            }
+                        }
+            });
+viewer.terrainProvider = terrainProvider;
+
+
+
+//Camera options
+/*camera.setView({
+    position : Cesium.Cartesian3.fromDegrees(-86.54244760422232,13.5259,1000),
+    heading : 0.0,
+    pitch : -Cesium.Math.PI_OVER_TWO,
+    roll : 0.0
+});*/
+//viewer.zoomTo(position : 79.2883,13.5280);
+
+//place camera to the correct position
+    /*var target = Cesium.Cartesian3.fromDegrees(79.2883, 13.5280,1000);
+    var offset = new Cesium.HeadingPitchRange(0, -Math.PI/2, 300);
+    viewer.camera.lookAt(target, offset);
+	//viewer.camera.lookAt(target);
+    viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);*/
+	
+	//viewer.camera.lookAt(Cesium.Cartesian3.fromDegrees(-98.0, 40.0), new Cesium.Cartesian3(0.0, -4790000.0, 3930000.0));
+	//viewer.camera.lookAt(Cesium.Cartesian3.fromDegrees(79.2883,13.5280));
+    //viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
+
+  </script>
+</body>
+</html>

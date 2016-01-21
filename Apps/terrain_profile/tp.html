@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Use correct character set. -->
+  <meta charset="utf-8">
+  <!-- Tell IE to use the latest, best version. -->
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <!-- Make the application on mobile take up the full browser screen and disable user scaling. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+  <title>Hello World!</title>
+  <script src="../../Build/Cesium/Cesium.js"></script>
+  
+  <script src="../GeoserverTerrainProvider.js" type="text/javascript"></script>
+  <link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+  <script src="//code.jquery.com/jquery-1.10.2.js"></script>
+  <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+  <script type="text/javascript" src="plotly-latest.min.js"></script>
+  <style>
+      @import url(../../Build/Cesium/Widgets/widgets.css);
+      html, body, #cesiumContainer {
+          width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
+      }
+	  .toolbar-left {
+            display: block;
+            position: absolute;
+            top: 5px;
+            left: 5px;
+        }
+  </style>
+</head>
+<body>
+  <div id="cesiumContainer"></div>
+  <canvas id="canvas" width="512" height="512"></canvas>
+	<div id="dialog" title="Basic dialog" >
+		<div id="tester" style="width:512px;height:512px;" onload="stp()"></div>
+	</div>   
+<div class="toolbar-left">
+<button onclick="initialView()">Initial View</button>
+<button onclick = "choose_pts()">Choose Points</button>
+<button onclick="show_terrain_profile()">Show Terrain Profile</button>
+<button onclick="fly()">I believe I can fly</button>
+</div>   
+
+  <script>
+  
+    
+    var viewer = new Cesium.Viewer('cesiumContainer');
+	var scene = viewer.scene;
+	//var canvas = document.getElementById('cesiumContainer');
+	var ellipsoid = viewer.scene.globe.ellipsoid;
+
+	var entity = viewer.entities.add({
+		label : {
+			show : false
+	}});	
+		
+	
+	// LOAD LAYER		
+	/*var url='http://bhuvan3.nrsc.gov.in/tilecache/tilecache.py?'; //Service URL
+	var layers = viewer.scene.globe.imageryLayers;
+    layers.removeAll();
+    layers.addImageryProvider(new Cesium.WebMapServiceImageryProvider({
+		//proxy : new Cesium.DefaultProxy('proxy.php'),
+        url : url,        
+        layers: 'bhuvan_imagery'
+    }));*/
+
+		
+		
+		
+	// LOAD TERRAIN
+	var terrainProvider = new Cesium.GeoserverTerrainProvider({
+		//proxy : new Cesium.DefaultProxy('proxy.php'),
+		//service : "WMS",
+        url : "http://localhost:8080/geoserver/elevation/wms",
+		
+        //layerName: "SRTM_1km_512",
+		layerName: "srtm_global_90m_tiled"
+		//hasStyledImage: false,
+		//styleName:"grayToColor",
+        //waterMask:true
+    });
+	
+	
+	viewer.terrainProvider = terrainProvider;	
+
+	//var ps=new Cesium.Cartographic.fromDegrees(78.3352765625, 21.173860625, 6900000);
+	viewer.camera.setView({
+		destination : Cesium.Cartesian3.fromDegrees(78.3352765625, 21.173860625, 6900000)
+	});
+	
+	
+	
+	var dist=0;
+	var height_arr = new Array();
+	var dist_arr = [0];	
+	var latlong = new Array();
+	var inter_pts = new Array();
+	var dist_inter_pts = [];
+	var fraction;
+	var ht = [];
+	function initialView() {
+		scene.camera.flyTo({
+			destination : Cesium.Cartesian3.fromDegrees(78.3352765625, 21.173860625, 6900000)
+		});
+	}
+	
+	function choose_pts(){	
+		dist=0;
+		height_arr = new Array();
+		dist_arr = [0];	
+		latlong = new Array();
+		latlong_carto = new Array();
+		//var alt = new Array(); 
+		var handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+		var hand = 	new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+			handler.setInputAction(function (movement) {
+			//console.log("LEFT CLICK");
+			//var pick = viewer.scene.pick(movement.position);
+			var cartesian = viewer.camera.pickEllipsoid(movement.position, scene.globe.ellipsoid);
+			if (cartesian) {
+					var cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+					var longitudeString = Cesium.Math.toDegrees(cartographic.longitude).toFixed(2);
+					var latitudeString = Cesium.Math.toDegrees(cartographic.latitude).toFixed(2);
+					var ray = viewer.camera.getPickRay(movement.position);
+					//console.log(movement.position);
+					var position = viewer.scene.globe.pick(ray, viewer.scene);
+					//console.log(position);
+					var positionCartographic = Cesium.Ellipsoid.WGS84.cartesianToCartographic(position);
+					//console.log(positionCartographic);
+					var theight = positionCartographic.height.toFixed(2);
+					//console.log("lat= "+(latitudeString)+"°; long="+(longitudeString)+"°; Altitude="+(theight))
+					
+					latlong.push(position);
+					latlong_carto.push(cartographic);
+					
+					//height_arr.push(theight);
+					entity.position = cartesian;
+					//console.log(' + longitudeString + ', ' + latitudeString + ' , ' + theight + ');
+					entity.label.show = true;
+					entity.label.text = '(' + longitudeString + ', ' + latitudeString + ' , ' + theight + ')';
+						
+				} else {
+					entity.label.show = false;
+				} 
+		}, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+	}		
+
+		
+		function show_terrain_profile(){
+
+			// Dialog box of the graph
+			$(function() {
+				//$( "#dialog" ).dialog({height:'auto', width:'auto',modal:true});
+				$( "#dialog" ).dialog({
+					  dialogClass: "no-close",
+					  buttons: [
+						{
+						  text: "OK",
+						  click: function() {
+							$( this ).dialog( "close" );
+						  }
+						},
+						{
+						  text: "Download data as text file",
+						  click: function()	{
+							dld();
+						  }
+						}
+					  ] , height:'auto',width:'auto',modal:true
+					});
+			});
+			/*for(i=1;i<=height_arr - 1;i++){
+				alt.push(height_arr[i-1]);				
+			}*/
+			//console.log(height_arr);
+			
+			/*for(i=1;i<=latlong_carto.length - 1;i++){
+				if(latlong_carto.length>1){
+					dist = dist + ((Cesium.Cartesian3.distance(Cesium.Cartesian3.fromRadians(latlong[i-1].longitude,latlong_carto[i-1].latitude),Cesium.Cartesian3.fromRadians(latlong_carto[i].longitude,latlong_carto[i].latitude)))/1000);
+					dist_arr.push(dist);
+				}				
+			}*/
+			//console.log(dist_arr);
+			/*var TESTER = document.getElementById('tester');
+				Plotly.plot( TESTER, [{
+				x: dist_arr,
+				y: height_arr }], {
+				margin: { t: 0 },
+				xaxis:{title:'Distance in km'},
+				yaxis:{title:'Altitude in meters'} }
+				
+				);*/
+			//var inter_pts = typeof TESTER;	
+			//console.log(latlong_carto);
+			
+			//Make heights of all to 0 to be able to use Cesium.Cartesian3.distance
+			for(i=0;i<=latlong_carto.length - 1;i++){
+				latlong_carto[i].height = 0;
+			}
+			
+			
+			
+			//Find all the points
+			count = 0;
+			for(i=1;i<=latlong_carto.length-1;i++){
+			
+				samples = new Cesium.EllipsoidGeodesic(latlong_carto[i-1],latlong_carto[i],ellipsoid);    //Geodesic path between selected points
+				console.log(samples);
+				var fraction = parseInt((samples._distance)/10);
+				
+				console.log(fraction);
+				//Interpolate points using surface distance
+				j=1;
+				while(j<=fraction-1){
+				   
+				   inter_pts[count+j] = samples.interpolateUsingSurfaceDistance(10*j);
+				   ht[count+j] = viewer.scene.globe.getHeight(inter_pts[count+j]);
+				   j++;
+				}
+				inter_pts[count] = samples._start;
+				inter_pts.push(samples._end);
+				ht[count] = viewer.scene.globe.getHeight(inter_pts[count]);
+				ht.push(viewer.scene.globe.getHeight(inter_pts[inter_pts.length-1]));
+				
+				//console.log(inter_pts);
+				//console.log(ht);
+				//console.log(dist_inter_pts);
+				
+				for(k=1;k<=fraction;k++){
+					if(inter_pts.length>1){
+						dist = dist + ((Cesium.Cartesian3.distance(Cesium.Cartesian3.fromRadians(inter_pts[count+k-1].longitude,inter_pts[count+k-1].latitude),Cesium.Cartesian3.fromRadians(inter_pts[count+k].longitude,inter_pts[count+k].latitude)))/1000);
+						dist_arr[count+k] = dist;
+					}		
+				}
+				count = count + fraction + 1;
+			
+			}
+			
+			//Plot the terrain profile
+			
+			var TESTER = document.getElementById('tester');
+				Plotly.plot( TESTER, [{
+				x: dist_arr,
+				y: ht }], {
+				margin: { t: 0 },
+				xaxis:{title:'Distance in km'},
+				yaxis:{title:'Altitude in meters'} }
+				
+				)
+			
+			
+			
+			// Download 1)Heights 2)Distances from original points, and 3)All the point locations
+			function download(filename, text) {
+			  var element = document.createElement('a');
+			  element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+			  element.setAttribute('download', filename);
+
+			  element.style.display = 'none';
+			  document.body.appendChild(element);
+
+			  element.click();
+
+			  document.body.removeChild(element);
+			}
+			function dld(){
+			  var download_data = "Location             " + "Altitude " + "Distance along path from origin";
+			  for(i=0;i<=inter_pts.length-1;i++) {
+					download_data = download_data + "\r\n" + "Lat: " + Cesium.Math.toDegrees(inter_pts[i].latitude).toFixed(5) + "  Lon: " + Cesium.Math.toDegrees(inter_pts[i].longitude).toFixed(5) + "   " + ht[i].toFixed(2) + "   " + dist_arr[i];
+			  }
+			  download("text.txt",download_data);
+			}
+			
+			
+			/*dist=0;
+			dist_arr = [];
+			ht = [];
+			inter_pts = {};
+			*/
+			
+			
+			//height_arr = new Array();
+			//dist_arr = [0];	
+			//latlong = new Array();	
+			//TESTER = null;
+				/*TESTER = document.getElementById('tester');
+					Plotly.plot( TESTER, [{
+					x: [1, 2, 3, 4, 5],
+					y: [1, 2, 4, 8, 16] }], {
+					margin: { t: 0 } } );*/
+					
+			
+		}
+		
+		
+		
+
+		
+  </script>
+ 
+</body>
+</html>

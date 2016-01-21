@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>DrawHelper</title>
+    <script src="../../Build/Cesium/Cesium.js"></script>
+    <script src="DrawHelper.js"></script>
+	<script src= "http://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular.min.js"></script>
+	<script src="../GeoserverTerrainProvider.js" type="text/javascript"></script>
+	
+	
+		<style>
+			@import url(../../Build/Cesium/Widgets/widgets.css);
+      html, body, #cesiumContainer {
+          width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
+      }
+	  .toolbar-left {
+            display: block;
+            position: absolute;
+            top: 5px;
+            left: 5px;
+        }
+			
+		</style>
+		
+
+		
+		
+		
+</head>
+<body onload="start()">
+
+<div id="cesiumContainer"></div>
+<div class="toolbar-left">
+<p id="txt"></p>
+<button onclick="initialView()">Initial View</button>
+<button onclick="start()">Start</button>
+<button onclick="stop()">Stop</button>
+</div>
+<div id="logging">
+</div>
+
+<script>
+	var viewer = new Cesium.Viewer('cesiumContainer');
+	var scene = viewer.scene;
+	var ps=new Cesium.Cartographic.fromDegrees(78.3352765625, 21.173860625, 6900000);
+	scene.camera.setView({positionCartographic : ps});
+	var ellipsoid = scene.globe.ellipsoid;
+    var entity = viewer.entities.add({
+        label : {
+            show : false
+        }});
+	var latlong = new Array();
+	function initialView() {
+		scene.camera.flyTo({
+			destination : Cesium.Cartesian3.fromDegrees(78.3352765625, 21.173860625, 6900000)
+		});
+	}
+
+
+	function start() {
+	// Mouse over the globe to see the cartographic position
+		var handler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
+		
+		handler.setInputAction(function(movement) {
+			var cartesian = viewer.camera.pickEllipsoid(movement.position, ellipsoid);
+			if (cartesian) {
+				var cartographic = ellipsoid.cartesianToCartographic(cartesian);
+				var longitudeString = Cesium.Math.toDegrees(cartographic.longitude).toFixed(5);
+				var latitudeString = Cesium.Math.toDegrees(cartographic.latitude).toFixed(5);
+				var ray = viewer.camera.getPickRay(movement.position);
+				var position = viewer.scene.globe.pick(ray, viewer.scene);
+				var positionCartographic = Cesium.Ellipsoid.WGS84.cartesianToCartographic(position);
+				var theight = positionCartographic.height.toFixed(2);
+				//latlong.push([longitudeString,latitudeString,theight]);
+				latlong.push(position);
+				console.log(latlong);
+				console.log(position);
+				//document.getElementById('txt').color = "white";
+				//document.getElementById('txt').innerHTML = position;
+				var distance = Cesium.Cartesian3.magnitude(Cesium.Cartesian3.subtract(latlong[0], latlong[1], new Cesium.Cartesian3()));
+				console.log(distance);
+				//entity.position = cartesian;
+				//entity.label.show = true;
+				//entity.label.text = '(' + longitudeString + ', ' + latitudeString + ' , ' + theight + ')';
+					
+			} //else {
+				//entity.label.show = false;
+			//}
+		},Cesium.ScreenSpaceEventType.LEFT_CLICK); //Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+	}
+
+
+	/*function stop(){
+		for(i=1;i<=latlong.length;i++){
+			
+		}
+	
+	}*/
+
+</script>
+
+</body>
+</html>

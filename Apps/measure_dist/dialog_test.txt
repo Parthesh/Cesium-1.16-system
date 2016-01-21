@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<script src="jquery-1.10.2.js"></script>
+  <script src="jquery-ui-1.11.4/jquery-ui.js"></script>
+</head>
+<body>
+	<div id="dialog" title="Enter Sampling distance in meters">
+		<div id="tester" style="width:512px;height:512px;"></div>
+	</div>
+<script>
+	$(function() {
+		
+		$( "#dialog" ).dialog({
+			  dialogClass: "no-close",
+			  buttons: [
+				{
+				  text: "OK",
+				  click: function() {
+					$( this ).dialog( "close" );
+				  }
+				},
+				{
+				  text: "Download data as text file",
+				  click: function()	{
+					//dld();
+					download("Terrain_Profile.txt",DOWNLOAD_DATA);
+				  }
+				}
+			  ] , height:'auto',width:'auto',modal:true
+			});
+	});
+</script>
+</body>
+</html>

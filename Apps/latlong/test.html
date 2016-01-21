@@ -1,0 +1,27 @@
+<html>
+<body>
+    <script>
+    function myFunction(){
+        var array_resp=['CorrectStreet','CorrectCity','CorrectState','CorrectZip'];
+        // var stateName=map.getKey(CorrectState);
+        if(array_resp.length > 0) {
+            for(var i = 0; i <= array_resp.length - 2; i++) {
+                var label = document.createElement('label');
+                label.style.color = '#000';
+                label.style.top = 'top';
+                label.style.left = '30px';
+                label.style.width = '420px';
+                label.style.height = '100px';
+                label.style.visible = 'true';
+                label.style.backgroundColor = 'white';
+                label.style.font = 'FontNormal';
+                label.innerHTML = array_resp[i];
+
+                document.body.appendChild(label);
+            }
+        }
+    }
+    </script>
+    <button onclick="myFunction()">Try it</button>
+</body>
+</html>

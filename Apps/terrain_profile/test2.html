@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>jQuery UI Dialog - Default functionality</title>
+  <link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+  <script src="//code.jquery.com/jquery-1.10.2.js"></script>
+  <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+  <script type="text/javascript" src="plotly-latest.min.js"></script>
+  <!--link rel="stylesheet" href="http://code.jquery.com/resources/demos/style.css"-->
+
+</head>
+<!--body onload="draw()"-->
+<body>
+<button onclick="show()">SHOW THE DIALOG BOX</button>
+<div id="dialog" title="Basic dialog" >
+<!--canvas id="canvas" width="768" height="768"></canvas-->
+<!--canvas id="canvas" width="512" height="512"></canvas-->
+<div id="tester" style="width:600px;height:250px;"></div>
+  <!--p>This is the default dialog which is useful for displaying information. The dialog window can be moved, resized and closed with the 'x' icon.</p-->
+  
+</div>
+
+    <script>
+	function show(){
+  $(function() {
+    $( "#dialog" ).dialog({height:'auto', width:'auto',modal:true});
+  });
+  	/*TESTER = document.getElementById('tester');
+		Plotly.plot( TESTER, [{
+		x: [1, 2, 3, 4, 5],
+		y: [1, 2, 4, 8, 16] }], {
+		margin: { t: 0 } } );*/
+	}
+  </script>
+ 
+</body>
+</html>

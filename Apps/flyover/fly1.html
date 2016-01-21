@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Use correct character set. -->
+  <meta charset="utf-8">
+  <!-- Tell IE to use the latest, best version (or Chrome Frame if pre-IE11). -->
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+  <!-- Make the application on mobile take up the full browser screen and disable user scaling. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+  <title>Hello World!</title>
+  <script src="../../Build/Cesium/Cesium.js"></script>
+  <script src="../GeoserverTerrainProvider.js" type="text/javascript"></script>
+  <style>
+      @import url(../../Build/Cesium/Widgets/widgets.css);
+      html, body, #cesiumContainer {
+          width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
+      }
+	  .toolbar-left {
+            display: block;
+            position: absolute;
+            top: 5px;
+            left: 5px;
+        }
+  </style>
+  
+  </head>
+<body>
+  <!--div id="cesiumContainer"></div-->
+  <div id="cesiumContainer"></div>
+  <!--div class="toolbar-left">
+   <button onclick="latlong()">Show Cartographic Position on Mouse Over</button>
+   <button onclick="labelhide()">Hide Cartographic Position</button>
+   <button onclick="initialView()">Initial View</button-->
+  <script>
+  
+var widget = new Cesium.CesiumWidget('cesiumContainer', {
+//    terrainProvider : new Cesium.CesiumTerrainProvider({
+//        url : '//assets.agi.com/stk-terrain/world'
+//    })
+});
+
+var VirtualTour = function(positions){
+    var CC3=Cesium.Cartesian3;    
+    this.tourArray = [];
+    this.load = function(positions){
+        for (var i = 0; i < positions.cameraPositions.length; i++){
+            positions[i] = positions.cameraPositions[i];
+            positions[i].destination = Cesium.Cartesian3.fromDegrees(positions[i].longitude, positions[i].latitude, positions[i].height);
+            positions[i].heading = Cesium.Math.toRadians(positions[i].heading);
+            positions[i].pitch = Cesium.Math.toRadians(positions[i].pitch);
+            positions[i].roll = Cesium.Math.toRadians(positions[i].roll);
+            positions[i].yaw = Cesium.Math.toRadians(positions[i].yaw);            
+            this.tourArray[positions[i].id] = positions[i];
+        }
+    };
+    this.load(positions);    
+    this.tourExecuting = false;
+    this.nextPosition=1;
+    this.moveIncrement = 1;
+    this.timeInterval=10;
+    this.flyToWait = 6000;
+    this.setSpeedFactor = function(num){
+    this.moveIncrement = num*this.moveIncrement;
+    };
+
+
+    this.flyToRest = function(){
+        this.nextPosition++; 
+        var thisTour = this;
+        setTimeout(function(){thisTour.flyToNext();},this.flyToWait);
+
+    };
+    
+    this.flyToNext= function(){
+      
+            var camera = widget.scene.camera;
+            var heightInc = 0;
+            var cameraHeadingInc = 0;
+            var lookUpInc = 0;   
+            var rollLeftInc = 0;   
+            var rollCompleted = 0;
+            var angleInc = 0;
+            var radiusChangeInc = 0;
+            var zoomInc = 0;
+            var yawInc = 0;
+            var geodesic = new Cesium.EllipsoidGeodesic();
+            var cart1 = Cesium.Cartographic.fromDegrees(this.tourArray[this.nextPosition-1].longitude,this.tourArray[this.nextPosition-1].latitude,this.tourArray[this.nextPosition-1].height);
+            var cart2 = Cesium.Cartographic.fromDegrees(this.tourArray[this.nextPosition].longitude,this.tourArray[this.nextPosition].latitude,this.tourArray[this.nextPosition].height);
+            
+            geodesic.setEndPoints(cart1, cart2);
+            camera.setView({
+                heading : geodesic.startHeading,
+            });
+            var incGeodesic = new Cesium.EllipsoidGeodesic();
+            var distanceCovered = 0;
+            var thisTour = this;
+            var rotater=new CC3();
+            this.flightListener = function() {
+
+                if (geodesic.surfaceDistance - distanceCovered < 1){ 
+                    thisTour.nextPosition++;                       
+                    if (thisTour.nextPosition === thisTour.tourArray.length){
+                        thisTour.end();
+                    }else{     
+                        cart1 = Cesium.Cartographic.fromDegrees(thisTour.tourArray[thisTour.nextPosition-1].longitude,thisTour.tourArray[thisTour.nextPosition-1].latitude,thisTour.tourArray[thisTour.nextPosition-1].height);
+                        cart2 = Cesium.Cartographic.fromDegrees(thisTour.tourArray[thisTour.nextPosition].longitude,thisTour.tourArray[thisTour.nextPosition].latitude,thisTour.tourArray[thisTour.nextPosition].height);
+                        geodesic.setEndPoints(cart1, cart2);
+                        var cameraHeadingAmount = Cesium.Math.zeroToTwoPi(geodesic.endHeading)-camera.heading;
+                        if (cameraHeadingAmount < 0 && (-cameraHeadingAmount) > Cesium.Math.PI ){cameraHeadingAmount = Cesium.Math.PI*2-camera.heading+geodesic.endHeading;}
+                        if (cameraHeadingAmount > Cesium.Math.PI ){cameraHeadingAmount = -(camera.heading-geodesic.endHeading);}
+                        
+                        cameraHeadingInc = cameraHeadingAmount/geodesic.surfaceDistance*thisTour.moveIncrement;
+                        lookUpInc = (thisTour.tourArray[thisTour.nextPosition].pitch - thisTour.tourArray[thisTour.nextPosition-1].pitch)/geodesic.surfaceDistance*thisTour.moveIncrement;
+                        rollLeftInc = (thisTour.tourArray[thisTour.nextPosition].roll - thisTour.tourArray[thisTour.nextPosition-1].roll)/geodesic.surfaceDistance*thisTour.moveIncrement;
+                        zoomInc = (thisTour.tourArray[thisTour.nextPosition].zoom - thisTour.tourArray[thisTour.nextPosition-1].zoom)/geodesic.surfaceDistance*thisTour.moveIncrement;
+                        yawInc = (thisTour.tourArray[thisTour.nextPosition].yaw - thisTour.tourArray[thisTour.nextPosition-1].yaw)/geodesic.surfaceDistance*thisTour.moveIncrement;
+                        console.log ("from "+(thisTour.nextPosition-1)+" to "+thisTour.nextPosition);
+
+                        console.log("cam "+camera.heading);
+                        console.log("geo "+geodesic.endHeading);
+                        console.log(cameraHeadingAmount);
+                        
+                        camera.setView({
+                            //heading : geodesic.startHeading,
+                            //pitch : thisTour.tourArray[thisTour.nextPosition].pitch,
+                            //roll : thisTour.tourArray[thisTour.nextPosition].roll,
+                        }); 
+                        distanceCovered = 0;
+                        heightInc = (thisTour.tourArray[thisTour.nextPosition].height - thisTour.tourArray[thisTour.nextPosition-1].height)/geodesic.surfaceDistance*thisTour.moveIncrement;
+                        
+                        //declarations
+
+                        var o=new CC3(0,0,0);
+                        var oB=new CC3();var oBunit=new CC3();
+                        var oA=new CC3();var oAunit=new CC3();
+                        var A = CC3.fromDegrees(thisTour.tourArray[thisTour.nextPosition].longitude,thisTour.tourArray[thisTour.nextPosition].latitude,thisTour.tourArray[thisTour.nextPosition].height);
+                        var B = CC3.fromDegrees(thisTour.tourArray[thisTour.nextPosition-1].longitude,thisTour.tourArray[thisTour.nextPosition-1].latitude,thisTour.tourArray[thisTour.nextPosition-1].height);
+
+                        //determine rotater, the axis you rotate around. +angle is from A to B
+                        CC3.subtract(B,o,oB);
+                        CC3.subtract(A,o,oA);
+                        CC3.normalize(oB,oBunit);
+                        CC3.normalize(oA,oAunit);
+                        CC3.cross(oAunit,oBunit,rotater);
+                        //console.log(rotater);
+                        
+                        //determine angle amount to rotate
+                        var adj = CC3.dot(oBunit,oAunit);
+                        var angle = Math.acos(adj);
+                        angleInc = angle/geodesic.surfaceDistance*thisTour.moveIncrement;
+
+                        //determine radius change from A to B
+                        var magB=CC3.magnitude(oB);
+                        var magA=CC3.magnitude(oA); 
+                        var radiusChange = magB-magA;
+                        radiusChangeInc = radiusChange/geodesic.surfaceDistance*thisTour.moveIncrement;
+                    }
+                }else {
+                    //declarations
+
+                    var o=new CC3(0,0,0);
+                    var oB=new CC3();var oBunit=new CC3();
+                    var oA=new CC3();var oAunit=new CC3();
+                    var A = CC3.fromDegrees(thisTour.tourArray[thisTour.nextPosition].longitude,thisTour.tourArray[thisTour.nextPosition].latitude,thisTour.tourArray[thisTour.nextPosition].height);
+                    var B = CC3.fromDegrees(thisTour.tourArray[thisTour.nextPosition-1].longitude,thisTour.tourArray[thisTour.nextPosition-1].latitude,thisTour.tourArray[thisTour.nextPosition-1].height);
+
+                    //determine rotater, the axis you rotate around. +angle is from A to B
+                    CC3.subtract(B,o,oB);
+                    CC3.subtract(A,o,oA);
+                    CC3.normalize(oB,oBunit);
+                    CC3.normalize(oA,oAunit);
+                    CC3.cross(oAunit,oBunit,rotater);
+                    //console.log(rotater);
+
+                    //determine angle amount to rotate
+                    var adj = CC3.dot(oBunit,oAunit);
+                    var angle = Math.acos(adj);
+                    angleInc = angle/geodesic.surfaceDistance*thisTour.moveIncrement;
+
+                    //determine radius change from A to B
+                    var magB=CC3.magnitude(oB);
+                    var magA=CC3.magnitude(oA); 
+                    var radiusChange = magB-magA;
+                    radiusChangeInc = radiusChange/geodesic.surfaceDistance*thisTour.moveIncrement;
+ 
+                    var currentPos = camera.positionCartographic;
+                    incGeodesic.setEndPoints(currentPos, cart2);
+                    camera.look(Cesium.Ellipsoid.WGS84.geodeticSurfaceNormalCartographic(currentPos),cameraHeadingInc);
+                    camera.lookUp(lookUpInc);
+                    camera.twistRight(rollLeftInc);
+                    camera.zoomIn(zoomInc);
+                    camera.lookRight(yawInc);
+                    
+                    camera.setView({
+                        //positionCartographic: geodesic.interpolateUsingSurfaceDistance(distanceCovered),
+                        //heading : incGeodesic.startHeading,
+                        //pitch : thisTour.tourArray[thisTour.nextPosition].pitch,
+                        //roll : rollCompleted,                        
+                    });   
+                    /*
+                    if(0)
+                    {camera.moveForward(thisTour.moveIncrement);}
+                    else
+                    {
+                    //remove vertical component from camera.direction
+                    var nadir = new CC3();var temp= new CC3();
+                    Cesium.Ellipsoid.WGS84.geodeticSurfaceNormalCartographic(currentPos, nadir);
+                    CC3.negate(nadir,nadir); //zenith to nadir
+                    var scalar = CC3.dot(camera.direction,nadir);
+                    CC3.multiplyByScalar(nadir,scalar,temp);
+                    CC3.subtract(camera.direction,temp,temp); //remove downward component
+                    //widget.scene.camera.move(temp,thisTour.moveIncrement);
+                    }
+                    */
+                    //camera.rotate(rotater, thisTour.moveIncrement/6371000+radiusChangeInc+heightInc);
+                    camera.rotate(rotater, angleInc);
+                    camera.move(Cesium.Ellipsoid.WGS84.geodeticSurfaceNormalCartographic(currentPos),heightInc);
+                    distanceCovered = distanceCovered+thisTour.moveIncrement;
+
+                }
+            };
+            widget.clock.onTick.addEventListener(thisTour.flightListener);        
+            
+
+    };
+    this.start = function(){
+        try {
+            if (this.tourExecuting) {return; }
+            this.tourExecuting = true;
+            this.nextPosition=1;
+            this.startPosition = {};
+            this.startPosition.destination = Cesium.Cartesian3.clone(widget.scene.camera.positionWC);
+            this.startPosition.heading = widget.scene.camera.heading;
+            this.startPosition.pitch = widget.scene.camera.pitch;
+            this.startPosition.roll = widget.scene.camera.roll;            
+            widget.scene.camera.flyTo({
+                destination : this.tourArray[this.nextPosition].destination,
+                duration : 5,
+                complete : this.flyToRest.call(this),            
+                orientation : {
+                    heading: this.tourArray[this.nextPosition].heading,
+                    pitch: this.tourArray[this.nextPosition].pitch,
+                    roll: this.tourArray[this.nextPosition].roll,
+                }              
+            });         
+        }catch(err) {
+            this.tourExecuting = false;
+        }
+                
+    };  
+    this.end = function(){
+        try {
+            this.nextPosition=0;
+            this.tourExecuting=false;
+            widget.clock.onTick.removeEventListener(this.flightListener);              
+            widget.scene.camera.flyTo({
+                destination : this.startPosition.destination,
+ 
+                duration : 5,
+         
+                orientation : {
+                    heading: this.startPosition.heading,
+                    pitch: this.startPosition.pitch,
+                    roll: this.startPosition.roll,
+                }              
+            });              
+     
+        }catch(err) {
+            this.tourExecuting = false;
+        }
+    };
+    
+};
+
+function tourExecuting(){
+    return sanMarcosTour.tourExecuting;
+}
+
+
+var positions = {"cameraPositions":[{"id":1,"name":"","longitude":-117.2574805017832,"latitude":32.93612414370479,"height":20.0,"heading":20.0,"pitch":0,"roll":0.0,"yaw":0.0,"zoom":0.0},{"id":2,"name":"","longitude":-117.2576608676146,"latitude":32.93831739821949,"height":20.0,"heading":20.0,"pitch":0,"roll":0.0,"yaw":0.0,"zoom":0.0},{"id":3,"name":"","longitude":-117.2579841712574,"latitude":32.93894148374235,"height":20.0,"heading":20.0,"pitch":0,"roll":0.0,"yaw":0.0,"zoom":0.0},{"id":4,"name":"","longitude":-117.2587435114121,"latitude":32.93942140275828,"height":20.0,"heading":20.0,"pitch":0,"roll":0.0,"yaw":0.0,"zoom":0.0},{"id":5,"name":"","longitude":-117.2594873755863,"latitude":32.93970836908177,"height":20.0,"heading":20.0,"pitch":0,"roll":0.0,"yaw":0.0,"zoom":0.0},{"id":6,"name":"","longitude":-117.2602644248514,"latitude":32.93969835583901,"height":20.0,"heading":20.0,"pitch":0,"roll":0.0,"yaw":0.0,"zoom":0.0},{"id":7,"name":"","longitude":-117.2610725917547,"latitude":32.94043843876157,"height":20.0,"heading":20.0,"pitch":0,"roll":0.0,"yaw":0.0,"zoom":0.0},{"id":8,"name":"","longitude":-117.2615265613306,"latitude":32.93757776020794,"height":20.0,"heading":20.0,"pitch":0,"roll":0.0,"yaw":0.0,"zoom":0.0},{"id":9,"name":"","longitude":-117.2597804456261,"latitude":32.9256440520405,"height":100.0,"heading":20.0,"pitch":0,"roll":0.0,"yaw":0.0,"zoom":0.0},{"id":10,"name":"","longitude":-117.2589789942027,"latitude":32.91494184362212,"height":100.0,"heading":20.0,"pitch":0,"roll":0.0,"yaw":0.0,"zoom":0.0},{"id":11,"name":"","longitude":-117.2562562275032,"latitude":32.9068053290119,"height":100.0,"heading":20.0,"pitch":0,"roll":0.0,"yaw":0.0,"zoom":0.0},{"id":12,"name":"","longitude":-117.2545063327262,"latitude":32.89179637715441,"height":100.0,"heading":20.0,"pitch":0,"roll":0.0,"yaw":0.0,"zoom":0.0},{"id":13,"name":"","longitude":-117.2540908126949,"latitude":32.88399252006997,"height":20.0,"heading":20.0,"pitch":0,"roll":0.0,"yaw":0.0,"zoom":0.0},{"id":14,"name":"","longitude":-117.2527851342648,"latitude":32.87966014623343,"height":20.0,"heading":20.0,"pitch":0,"roll":0.0,"yaw":0.0,"zoom":0.0},{"id":15,"name":"","longitude":-117.2522264417479,"latitude":32.87624928505539,"height":20.0,"heading":20.0,"pitch":0,"roll":0.0,"yaw":0.0,"zoom":0.0},{"id":16,"name":"","longitude":-117.2525859543191,"latitude":32.87336449763869,"height":20.0,"heading":20.0,"pitch":0,"roll":0.0,"yaw":0.0,"zoom":0.0},{"id":17,"name":"","longitude":-117.2540523482096,"latitude":32.8700631337669,"height":20.0,"heading":20.0,"pitch":0.0,"roll":0.0,"yaw":0.0,"zoom":0.0},{"id":18,"name":"","longitude":-117.2557263760174,"latitude":32.86552883427716,"height":100.0,"heading":20.0,"pitch":0.0,"roll":0.0,"yaw":0.0,"zoom":0.0},{"id":19,"name":"","longitude":-117.2576105498436,"latitude":32.86067776364092,"height":100.0,"heading":20.0,"pitch":0.0,"roll":0.0,"yaw":0.0,"zoom":0.0},{"id":20,"name":"","longitude":-117.2599242985757,"latitude":32.85651551476757,"height":20.0,"heading":20.0,"pitch":-90.0,"roll":0.0,"yaw":0.0,"zoom":0.0},{"id":21,"name":"","longitude":-117.2610728775735,"latitude":32.85413848711738,"height":100.0,"heading":20.0,"pitch":-90.0,"roll":0.0,"yaw":0.0,"zoom":0.0},{"id":22,"name":"","longitude":-117.2633041330431,"latitude":32.85193036086147,"height":100.0,"heading":20.0,"pitch":0,"roll":0.0,"yaw":0.0,"zoom":0.0},{"id":23,"name":"","longitude":-117.2655343611839,"latitude":32.85000759593054,"height":100.0,"heading":20.0,"pitch":0,"roll":0.0,"yaw":0.0,"zoom":0.0},{"id":24,"name":"","longitude":-117.2668491792967,"latitude":32.84963570717962,"height":100.0,"heading":20.0,"pitch":0,"roll":0.0,"yaw":0.0,"zoom":300.0},{"id":25,"name":"","longitude":-117.2670609902502,"latitude":32.84959368232232,"height":100.0,"heading":20.0,"pitch":0,"roll":0.0,"yaw":0.0,"zoom":300.0},{"id":26,"name":"","longitude":-117.2681280546488,"latitude":32.84961904027797,"height":100.0,"heading":20.0,"pitch":0,"roll":0.0,"yaw":0.0,"zoom":0.0},{"id":27,"name":"","longitude":-117.2693640026944,"latitude":32.85035478385458,"height":100.0,"heading":20.0,"pitch":0,"roll":0.0,"yaw":0.0,"zoom":0.0},{"id":28,"name":"","longitude":-117.2710194890279,"latitude":32.85125839505423,"height":100.0,"heading":20.0,"pitch":0,"roll":0.0,"yaw":0.0,"zoom":0.0},{"id":29,"name":"","longitude":-117.2712825206309,"latitude":32.8512955715919,"height":100.0,"heading":20.0,"pitch":0,"roll":0.0,"yaw":0.0,"zoom":0.0},{"id":30,"name":"","longitude":-117.2728362009425,"latitude":32.85168314049089,"height":100.0,"heading":20.0,"pitch":0,"roll":0.0,"yaw":0.0,"zoom":0.0},{"id":31,"name":"","longitude":-117.273182333766,"latitude":32.85177104885528,"height":100.0,"heading":20.0,"pitch":0,"roll":0.0,"yaw":0.0,"zoom":0.0},{"id":32,"name":"","longitude":-117.2745246645412,"latitude":32.85198971273201,"height":100.0,"heading":20.0,"pitch":0,"roll":0.0,"yaw":0.0,"zoom":0.0},{"id":33,"name":"","longitude":-117.2762007546314,"latitude":32.85131409915105,"height":100.0,"heading":20.0,"pitch":0,"roll":0.0,"yaw":0.0,"zoom":0.0},{"id":34,"name":"","longitude":-117.2764130556624,"latitude":32.85111987434836,"height":100.0,"heading":20.0,"pitch":0,"roll":20.0,"yaw":30.0,"zoom":0.0},{"id":35,"name":"","longitude":-117.2765769772855,"latitude":32.85094470039187,"height":100.0,"heading":20.0,"pitch":0,"roll":20.0,"yaw":30.0,"zoom":0.0},{"id":36,"name":"","longitude":-117.2775449716605,"latitude":32.85008884850251,"height":100.0,"heading":20.0,"pitch":0,"roll":20.0,"yaw":30.0,"zoom":0.0},{"id":37,"name":"","longitude":-117.2786863025526,"latitude":32.85143051498085,"height":100.0,"heading":20.0,"pitch":0,"roll":20.0,"yaw":30.0,"zoom":0.0},{"id":38,"name":"","longitude":-117.2791629329039,"latitude":32.85493397515227,"height":100.0,"heading":20.0,"pitch":0,"roll":20.0,"yaw":30.0,"zoom":0.0},{"id":39,"name":"","longitude":-117.2770596815736,"latitude":32.85615390154368,"height":100.0,"heading":20.0,"pitch":0,"roll":20.0,"yaw":30.0,"zoom":0.0},{"id":40,"name":"","longitude":-117.2744351014736,"latitude":32.85643090461426,"height":100.0,"heading":20.0,"pitch":0,"roll":20.0,"yaw":30.0,"zoom":0.0},{"id":41,"name":"","longitude":-117.2695653884658,"latitude":32.85501932547913,"height":100.0,"heading":20.0,"pitch":0,"roll":20.0,"yaw":30.0,"zoom":0.0},{"id":42,"name":"","longitude":-117.2693627142943,"latitude":32.85365262887459,"height":100.0,"heading":20.0,"pitch":0,"roll":20.0,"yaw":30.0,"zoom":0.0},{"id":43,"name":"","longitude":-117.2696617865192,"latitude":32.85311481938188,"height":100.0,"heading":20.0,"pitch":0,"roll":20.0,"yaw":30.0,"zoom":0.0},{"id":44,"name":"","longitude":-117.2700505997411,"latitude":32.85285553151987,"height":100.0,"heading":20.0,"pitch":0,"roll":20.0,"yaw":30.0,"zoom":0.0},{"id":45,"name":"","longitude":-117.2707043799224,"latitude":32.85289457277322,"height":100.0,"heading":20.0,"pitch":0,"roll":20.0,"yaw":30.0,"zoom":0.0},{"id":46,"name":"","longitude":-117.2711066376687,"latitude":32.85257085617489,"height":100.0,"heading":20.0,"pitch":0,"roll":20.0,"yaw":30.0,"zoom":0.0},{"id":47,"name":"","longitude":-117.2714153210521,"latitude":32.85224386194295,"height":20.0,"heading":20.0,"pitch":0,"roll":0.0,"yaw":0.0,"zoom":0.0},{"id":48,"name":"","longitude":-117.2715787043067,"latitude":32.85206142828558,"height":20.0,"heading":20.0,"pitch":0,"roll":0.0,"yaw":0.0,"zoom":0.0},{"id":49,"name":"","longitude":-117.2716442232234,"latitude":32.85196335317858,"height":20.0,"heading":20.0,"pitch":0,"roll":0.0,"yaw":0.0,"zoom":0.0},{"id":50,"name":"","longitude":-117.2716812635401,"latitude":32.85189833237033,"height":20.0,"heading":20.0,"pitch":0,"roll":0.0,"yaw":0.0,"zoom":0.0},{"id":51,"name":"","longitude":-117.2717126269207,"latitude":32.85183396244378,"height":20.0,"heading":20.0,"pitch":0,"roll":0.0,"yaw":0.0,"zoom":0.0},{"id":52,"name":"","longitude":-117.2718703225404,"latitude":32.85154592095168,"height":20.0,"heading":20.0,"pitch":0,"roll":0.0,"yaw":0.0,"zoom":0.0},]};
+
+
+var sanMarcosTour = new VirtualTour(positions);                    
+
+/*
+var sanMarcosTour = {};
+jQuery.getJSON( "resources/SanMarcosTour.json", function( positions ) {
+    sanMarcosTour = new VirtualTour(positions);    
+});  
+
+*/
+function SanMarcosTour(){
+                                    if (tourExecuting()) {return;    }
+    sanMarcosTour.setSpeedFactor(2);
+    sanMarcosTour.start();
+}
+SanMarcosTour();
+
+
+ </script>
+</body>
+</html>
+
