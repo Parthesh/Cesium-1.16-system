@@ -3,7 +3,7 @@
 <head>
   
   <title>Hello World!</title>
-  <script src="../../Build/CesiumUnminified/Cesium.js"></script>
+  <script src="../../Build/Cesium/Cesium.js"></script>
   
   <script src="../GeoserverTerrainProvider.js" type="text/javascript"></script>
   <!--link rel="stylesheet" href="jquery-ui-themes-1.11.4/themes/smoothness/jquery-ui.css"-->
@@ -43,6 +43,7 @@
 <!--button onclick="rem_terr()">remove terrain</button-->
 <!--button onclick="measure_dist()">Measure 3D Distance</button-->
 <button onclick="lighting()">Toggle Lighting</button>
+<button onclick="ces_ins()">Cesium Inspector</button>
 <button onclick="remove_all()">Remove All</button>
 <button onclick="flight_demo()">Flight Demo</button>
 <button onclick="top_down()">View Top Down</button>
@@ -58,6 +59,7 @@
 			url : 'http://bhuvan3.nrsc.gov.in/tilecache/tilecache.py?',
 			//url : 'http://bhuvannuis.nrsc.gov.in/bhuvan/gwc/service/wms?',
 			layers: 'bhuvan_imagery',
+            enablePickFeatures: false
 			//layers : 'india3'
 			//proxy : new Cesium.DefaultProxy('proxy.php') 
         }),
@@ -113,6 +115,9 @@
 		//hasStyledImage: false,
 		//styleName:"grayToColor",
         //waterMask:false
+        //service : "WMTS",
+        //url : "http://localhost:8080/geoserver/gwc/service/wmts",
+		//layerName: "elevation:srtm_global_90m_tiled",
     });
 	
 	
@@ -802,6 +807,17 @@
         viewer.trackedEntity = entity;
      }
 /////////////////////////////////////////////////////////////////////////////////////////////////////	
+    function ces_ins() {
+        viewer.extend(Cesium.viewerCesiumInspectorMixin);
+        /*viewer.extend(Cesium.viewerDragDropMixin);
+        viewer.dropError.addEventListener(function(viewerArg, source, error) {
+            window.alert('Error processing ' + source + ':' + error);
+        });*/
+        /*viewer.extend(Cesium.viewerPerformanceWatchdogMixin, {
+            lowFrameRateMessage : 'Why is this going so <em>slowly</em>?'
+        }) */           
+    }
+//////////////////////////////////////////////////////////////////////////////////////////////////////    
   </script>
  <div id="dialog" title="Terrain Profile">
 		<div id="tester" style="width:1024px;height:512px;"></div>
