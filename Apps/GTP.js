@@ -185,6 +185,7 @@
 	 		if(index>-1){
 	 			urlofServer=urlofServer.substring(0,index);
 	 		}
+            alert(urlofServer);
 	 		var urlGetCapabilities = urlofServer
 	 		+ '?SERVICE=WMS&REQUEST=GetCapabilities&tiled=true';
 	 		if (Cesium.defined(description.proxy)) {
@@ -395,7 +396,7 @@
 			&& (Cesium.defined(resultat.formatImage) || Cesium.defined(resultat.formatArray))
 			&& Cesium.defined(version);
 		}
-
+       // url = "http://localhost:8080/geoserver/gwc/service/wms"
 		if(resultat.ready){
 			var URLtemplate=url+'?SERVICE=WMS&REQUEST=GetMap&layers='+ layerName + '&version=' + version+'&bbox=';
 			if(isNewVersion && firstAxeIsLatitude){
@@ -556,7 +557,7 @@
 		}
 		return resultat;
 	};
-
+////////////////////////////////////////////////////////////
 	OGCHelper.WMTSParser.generate=function(description){
 		description = Cesium.defaultValue(description,
 			Cesium.defaultValue.EMPTY_OBJECT);
@@ -579,6 +580,8 @@
 			throw new Cesium.DeveloperError(
 				'either description.url or description.xml are required.');
 		}
+       // console.log (description);
+     //  console.log (resultat);
 		return resultat;
 	};
 
@@ -677,6 +680,7 @@
 				});
 			if(validFormats.length>0){
 				formatImage = OGCHelper.FormatImage[l];
+                //console.log("format image:",formatImage);
 			}
 		}
 			//TileMatrixSetLink =>TileMatrixSet
@@ -748,6 +752,7 @@
 						template=resourceURL.getAttribute("template").replace("{TileRow}","{y}").replace("{TileCol}","{x}").replace("{Style}",styleName).
 						replace("{TileMatrixSet}",tileMatrixSetLinkName).replace("{layer}",layerName).replace("{infoFormatExtension}",formatImage.extension);
 					}else if(Cesium.defined(urlKVP)){
+                 //alert(urlKVP);
 						template=urlKVP+"service=WMTS&request=GetTile&version=1.0.0&layer="+layerName+"&style=&"+styleName+"format="+formatImage.format+"&TileMatrixSet="+tileMatrixSetLinkName+"&TileMatrix={TileMatrix}&TileRow={y}&TileCol={x}"
 					}
 					
