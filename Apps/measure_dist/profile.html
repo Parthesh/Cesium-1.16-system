@@ -41,6 +41,7 @@
 <div class="toolbar-left">
 <button onclick="initialView()">Initial View</button>
 <button onclick = "choose_pts()">Terrain Profile</button>
+<button id="View_graph" onclick="show_terrain_profile()">View Graph</button>
 <!--button onclick="show_terrain_profile()">Show Terrain Profile</button-->
 <!--button onclick="rem_terr()">remove terrain</button-->
 <!--button onclick="measure_dist()">Measure 3D Distance</button-->
@@ -85,8 +86,9 @@
 	var draped_polyline = viewer.entities.add(new Cesium.Entity());
 	var LINE_DRAWN = false;  // Variable to avoid repeated polyline drawing after consecutive button click of "Show terrain Profile" and "Measure 3D Distance"
 	//viewer.dataSources.add(Cesium.CzmlDataSource.load('../SampleData/sample_new.czml'));
-	viewer.extend(Cesium.viewerCesiumInspectorMixin);
+	viewer.extend(Cesium.viewerCesiumInspectorMixin); //Cesium Inspector
 	var handler; //make handler global to avoid creating entities at every click even after terrain profile is shown
+    document.getElementById("View_graph").style.visibility = "hidden";
 //////////////////////////////////////////////////////////////////////////////////	
 	
 	// LOAD LAYER		
@@ -107,14 +109,16 @@
 	var terrainProvider = new Cesium.GeoserverTerrainProvider({
 	//var terrainProvider = new Cesium.CesiumTerrainProvider({
 		//proxy : new Cesium.DefaultProxy('proxy.php'),
-		//service : "WMS",
-        url : "http://localhost:8080/geoserver/elevation/wms",
+		service : "WMTS",
+        url : "http://localhost:8080/geoserver/gwc/service/wmts",
+        //url : "http://localhost:8080/geoserver/elevation/wms",
 		//url : '//assets.agi.com/stk-terrain/world',
 		//requestWaterMask : true,
 		//requestVertexNormals : true,
 		//url : 'http://localhost/cgi-bin/proxy.cgi',
         //layerName: "SRTM_1km",
-		layerName: "srtm_global_90m_tiled",
+		//layerName: "srtm_global_90m_tiled",
+        layerName: "elevation:srtm_global_90m_translated"
 		//hasStyledImage: false,
 		//styleName:"grayToColor",
         //waterMask:false
@@ -168,6 +172,7 @@
                         if (latlong_carto.length>=2)
                         {
                             show_terrain_profile();
+                            document.getElementById("View_graph").style.visibility = "visible";
                             $( this ).dialog( "close" );
                         } else{
                             document.getElementById("demo1").innerHTML = "Please choose at least 2 or more points first";
