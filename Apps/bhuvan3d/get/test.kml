@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document><Folder><name>4_29_2014_6338026</name>
+<Schema name="4_29_2014_6338026" id="4_29_2014_6338026">
+	<SimpleField name="Name" type="string"></SimpleField>
+	<SimpleField name="Description" type="string"></SimpleField>
+	<SimpleField name="ID" type="int"></SimpleField>
+	<SimpleField name="MESSAGE" type="string"></SimpleField>
+</Schema>
+  <Placemark>
+	<name>'name'</name>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+	<ExtendedData><SchemaData schemaUrl="#4_29_2014_6338026">
+		<SimpleData name="Name">'name'</SimpleData>
+		<SimpleData name="ID">1</SimpleData>
+		<SimpleData name="MESSAGE">'message'</SimpleData>
+	</SchemaData></ExtendedData>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>77.279663085937997,25.707275867463 77.603759765625,25.646851062776001 77.688903808594006,25.374939441681999 78.40576171875,25.330994129181999 78.430480957032003,26.179687976838 76.3916015625,28.564453125 74.8974609375,28.7841796875 72.041015625,25.3564453125 73.7548828125,21.2255859375 77.279663085937997,25.707275867463</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+</Folder></Document></kml>
+
+

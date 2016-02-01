@@ -1,22 +1,25 @@
 /*global define*/
 define([
         '../../Core/buildModuleUrl',
-        '../../Scene/ArcGisMapServerImageryProvider',
-        '../../Scene/BingMapsImageryProvider',
-        '../../Scene/BingMapsStyle',
-        '../../Scene/MapboxImageryProvider',
-        '../../Scene/createOpenStreetMapImageryProvider',
+      	'../../Core/DefaultProxy',
+        //'../../Scene/ArcGisMapServerImageryProvider', //bhuvan
+      //  '../../Scene/BingMapsImageryProvider',
+       // '../../Scene/BingMapsStyle',
+        '../../Scene/OpenStreetMapImageryProvider',
         '../../Scene/TileMapServiceImageryProvider',
-        '../BaseLayerPicker/ProviderViewModel'
+        '../BaseLayerPicker/ProviderViewModel',
+		'../../Scene/WebMapServiceImageryProvider' //bhuvan
     ], function(
         buildModuleUrl,
-        ArcGisMapServerImageryProvider,
-        BingMapsImageryProvider,
-        BingMapsStyle,
-        MapboxImageryProvider,
-        createOpenStreetMapImageryProvider,
+       	DefaultProxy,
+      //  ArcGisMapServerImageryProvider, //bhuvan
+      //  BingMapsImageryProvider,
+     //   BingMapsStyle,
+        OpenStreetMapImageryProvider,
         TileMapServiceImageryProvider,
-        ProviderViewModel) {
+        ProviderViewModel,
+		WebMapServiceImageryProvider //bhuvan
+		) {
     "use strict";
 
     /**
@@ -24,19 +27,36 @@ define([
      */
     function createDefaultImageryProviderViewModels() {
         var providerViewModels = [];
-        providerViewModels.push(new ProviderViewModel({
-            name : 'Bing Maps Aerial',
-            iconUrl : buildModuleUrl('Widgets/Images/ImageryProviders/bingAerial.png'),
-            tooltip : 'Bing Maps aerial imagery \nhttp://www.bing.com/maps',
+       providerViewModels.push(new ProviderViewModel({
+            name : 'Bhuvan Satellite Imagery',
+            iconUrl : buildModuleUrl('Widgets/Images/ImageryProviders/sat1.jpg'),
+            tooltip : 'Bhuvan Satellite imagery',
             creationFunction : function() {
-                return new BingMapsImageryProvider({
-                    url : '//dev.virtualearth.net',
-                    mapStyle : BingMapsStyle.AERIAL
-                });
+                return new OpenStreetMapImageryProvider({
+	//url : 'http://bhuvan.nrsc.gov.in/tilecache/tilecache.py/1.0.0/bhuvan_imagery2/',
+	url : 'http://bhuvan3.nrsc.gov.in/tilecache/tilecache.py/1.0.0/bhuvan_imagery2/',
+	
+	maximumLevel : 16,
+	//proxy: new DefaultProxy('proxy.php'), //to be commmented when making live
+    credit : ' '
+})
             }
         }));
 
-        providerViewModels.push(new ProviderViewModel({
+		 providerViewModels.push(new ProviderViewModel({
+            name : 'Bhuvan Maps',
+            iconUrl : buildModuleUrl('Widgets/Images/ImageryProviders/map2.jpg'),
+            tooltip : 'Bhuvan Maps data',
+            creationFunction : function() {
+                return new WebMapServiceImageryProvider({
+        url : 'http://bhuvan.nrsc.gov.in/nuis/gwc/service/wms/',        
+        layers: 'india3',
+		//proxy : new DefaultProxy('proxy.php')
+    });
+            }
+        }));
+
+      /*  providerViewModels.push(new ProviderViewModel({
             name : 'Bing Maps Aerial with Labels',
             iconUrl : buildModuleUrl('Widgets/Images/ImageryProviders/bingAerialLabels.png'),
             tooltip : 'Bing Maps aerial imagery with label overlays \nhttp://www.bing.com/maps',
@@ -61,39 +81,6 @@ define([
         }));
 
         providerViewModels.push(new ProviderViewModel({
-            name: 'Mapbox Satellite',
-            tooltip: 'Mapbox satellite imagery https://www.mapbox.com/maps/',
-            iconUrl: buildModuleUrl('Widgets/Images/ImageryProviders/mapboxSatellite.png'),
-            creationFunction: function() {
-                return new MapboxImageryProvider({
-                    mapId: 'mapbox.satellite'
-                });
-            }
-        }));
-
-        providerViewModels.push(new ProviderViewModel({
-            name: 'Mapbox Streets',
-            tooltip: 'Mapbox streets imagery https://www.mapbox.com/maps/',
-            iconUrl: buildModuleUrl('Widgets/Images/ImageryProviders/mapboxTerrain.png'),
-            creationFunction: function() {
-                return new MapboxImageryProvider({
-                    mapId: 'mapbox.streets'
-                });
-            }
-        }));
-
-        providerViewModels.push(new ProviderViewModel({
-            name: 'Mapbox Streets Classic',
-            tooltip: 'Mapbox streets basic imagery https://www.mapbox.com/maps/',
-            iconUrl: buildModuleUrl('Widgets/Images/ImageryProviders/mapboxStreets.png'),
-            creationFunction: function() {
-                return new MapboxImageryProvider({
-                    mapId: 'mapbox.streets-basic'
-                });
-            }
-        }));
-
-        providerViewModels.push(new ProviderViewModel({
             name : 'ESRI World Imagery',
             iconUrl : buildModuleUrl('Widgets/Images/ImageryProviders/esriWorldImagery.png'),
             tooltip : '\
@@ -106,8 +93,7 @@ i-cubed Nationwide Prime, Getmapping, AeroGRID, IGN Spain, and IGP Portugal.  Ad
 contributed by the GIS User Community.\nhttp://www.esri.com',
             creationFunction : function() {
                 return new ArcGisMapServerImageryProvider({
-                    url : '//services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer',
-                    enablePickFeatures : false
+                    url : '//services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
                 });
             }
         }));
@@ -122,8 +108,7 @@ Chile, Colombia, and Venezuela; Ghana; and parts of southern Africa including Bo
 http://www.esri.com',
             creationFunction : function() {
                 return new ArcGisMapServerImageryProvider({
-                    url : '//services.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer',
-                    enablePickFeatures : false
+                    url : '//services.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer'
                 });
             }
         }));
@@ -137,8 +122,7 @@ for informational and educational purposes as well as a basemap by GIS professio
 mapping applications.\nhttp://www.esri.com',
             creationFunction : function() {
                 return new ArcGisMapServerImageryProvider({
-                    url : '//services.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/',
-                    enablePickFeatures : false
+                    url : '//services.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/'
                 });
             }
         }));
@@ -149,7 +133,7 @@ mapping applications.\nhttp://www.esri.com',
             tooltip : 'OpenStreetMap (OSM) is a collaborative project to create a free editable map \
 of the world.\nhttp://www.openstreetmap.org',
             creationFunction : function() {
-                return createOpenStreetMapImageryProvider({
+                return new OpenStreetMapImageryProvider({
                     url : '//a.tile.openstreetmap.org/'
                 });
             }
@@ -161,7 +145,7 @@ of the world.\nhttp://www.openstreetmap.org',
             tooltip : 'Reminiscent of hand drawn maps, Stamen watercolor maps apply raster effect \
 area washes and organic edges over a paper texture to add warm pop to any map.\nhttp://maps.stamen.com',
             creationFunction : function() {
-                return createOpenStreetMapImageryProvider({
+                return new OpenStreetMapImageryProvider({
                     url : '//stamen-tiles.a.ssl.fastly.net/watercolor/',
                     credit : 'Map tiles by Stamen Design, under CC BY 3.0. Data by OpenStreetMap, under CC BY SA.'
                 });
@@ -173,7 +157,7 @@ area washes and organic edges over a paper texture to add warm pop to any map.\n
             iconUrl : buildModuleUrl('Widgets/Images/ImageryProviders/stamenToner.png'),
             tooltip : 'A high contrast black and white map.\nhttp://maps.stamen.com',
             creationFunction : function() {
-                return createOpenStreetMapImageryProvider({
+                return new OpenStreetMapImageryProvider({
                     url : '//stamen-tiles.a.ssl.fastly.net/toner/',
                     credit : 'Map tiles by Stamen Design, under CC BY 3.0. Data by OpenStreetMap, under CC BY SA.'
                 });
@@ -186,7 +170,7 @@ area washes and organic edges over a paper texture to add warm pop to any map.\n
             tooltip : 'OpenStreetMap (OSM) is a collaborative project to create a free editable \
 map of the world.\nhttp://www.openstreetmap.org',
             creationFunction : function() {
-                return createOpenStreetMapImageryProvider({
+                return new OpenStreetMapImageryProvider({
                     url : '//otile1-s.mqcdn.com/tiles/1.0.0/osm/'
                 });
             }
@@ -215,7 +199,7 @@ Earth at night as seen by NASA/NOAA\'s Suomi NPP satellite.',
                     url : buildModuleUrl('Assets/Textures/NaturalEarthII')
                 });
             }
-        }));
+        }));*/
 
         return providerViewModels;
     }
