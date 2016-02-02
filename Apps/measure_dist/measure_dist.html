@@ -40,6 +40,7 @@
 <button onclick="rem_terr()">remove terrain</button>
 <button onclick="measure_dist()">Measure 3D Distance</button>
 <button onclick="lighting()">Toggle Lighting</button>
+<button onclick="remove_all()">Remove</button>
 </div>   
 
   <script>
@@ -71,7 +72,9 @@
 	var clicked = false;  // Whether user has clicked on Choose points before going for Terrain Profile
 	var round = 0;
 	var download_data = "";
-	var choosen_pts = viewer.entities.add(new Cesium.Entity());
+	//var choosen_pts = viewer.entities.add(new Cesium.Entity());
+    var choosen_pts;
+    var id = 0;
 	var draped_polyline = viewer.entities.add(new Cesium.Entity());
 	var LINE_DRAWN = false;  // Variable to avoid repeated polyline drawing after consecutive button click of "Show terrain Profile" and "Measure 3D Distance"
 	//viewer.dataSources.add(Cesium.CzmlDataSource.load('../SampleData/sample_new.czml'));
@@ -136,6 +139,7 @@
 		
 		//latlong = new Array();
 		latlong_carto = new Array();
+        choosen_pts = viewer.entities.add(new Cesium.Entity());
 		//var alt = new Array(); 
 		var handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
 		//var hand = 	new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
@@ -175,7 +179,8 @@
 					choosen_pts.show = true;
 					//choosen_pts = viewer.entities.add(new Cesium.Entity());
 					viewer.entities.add({
-						parent : choosen_pts,
+                    //choosen_pts.add({
+						//parent : choosen_pts,
 						position : cartesian,//Cesium.Cartesian3.fromRadians(cartographic.longitude, cartographic.latitude,theight),
 						point : {
 							pixelSize : 15,
@@ -369,8 +374,10 @@
 					// Create draped polyline
 					if (LINE_DRAWN == false) {
 						for (pp=0;pp<=inter_pts.length-3;pp++){
+                            id +=1
 							viewer.entities.add({
-								parent : draped_polyline,
+								//parent : draped_polyline,
+                                id : id,
 								polyline : {
 									positions : Cesium.Cartesian3.fromRadiansArrayHeights([inter_pts[pp].longitude, inter_pts[pp].latitude,ht[pp],
 																					inter_pts[pp+1].longitude, inter_pts[pp+1].latitude,ht[pp+1]]),
@@ -644,9 +651,22 @@
 			
 		}
 		
+	
+    function remove_all(){
+        for(xx=1;xx<=id;xx++){
+            viewer.entities.remove(xx);
+        }
+    }
 		
-		
-		
+	//test
+ viewer.entities.add({
+        //parent : ellipsoids,
+        position : Cesium.Cartesian3.fromDegrees(-102.0, 45.0, 500000.0),
+        ellipsoid : {
+            radii : new Cesium.Cartesian3(45000.0, 45000.0, 90000.0),
+            material : Cesium.Color.fromRandom({alpha : 1.0})
+        }
+    });	
 
 		
   </script>

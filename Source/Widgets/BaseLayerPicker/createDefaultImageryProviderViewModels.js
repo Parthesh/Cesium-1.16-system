@@ -35,7 +35,7 @@ define([
                 return new OpenStreetMapImageryProvider({
 	//url : 'http://bhuvan.nrsc.gov.in/tilecache/tilecache.py/1.0.0/bhuvan_imagery2/',
 	url : 'http://bhuvan3.nrsc.gov.in/tilecache/tilecache.py/1.0.0/bhuvan_imagery2/',
-	
+	//url:'http://bhuvan3.nrsc.gov.in/tilecache/tilecache.py?',
 	maximumLevel : 16,
 	//proxy: new DefaultProxy('proxy.php'), //to be commmented when making live
     credit : ' '
@@ -51,7 +51,7 @@ define([
                 return new WebMapServiceImageryProvider({
         url : 'http://bhuvan.nrsc.gov.in/nuis/gwc/service/wms/',        
         layers: 'india3',
-		//proxy : new DefaultProxy('proxy.php')
+		proxy : new DefaultProxy('proxy.php')
     });
             }
         }));
