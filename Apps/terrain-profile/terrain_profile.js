@@ -1,73 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  
-  <title>Hello World!</title>
-  <!--script src="../../Build/Cesium/Cesium.js"></script-->
-  <!--script type="text/javascript" src="../bhuvan3d/js/Sandcastle-header.js"></script-->
-  <script type="text/javascript" src="../../ThirdParty/requirejs-2.1.20/require.js"></script>
-  <script type="text/javascript">
-    require.config({
-        baseUrl : '../../Source',
-        waitSeconds : 60
-    });
-    
-   /* require.config({
-        paths: {
-            "Cesium": "../../Source/Cesium",
-            "GeoserverTerrainProvider": "../GTP",
-            "jquery": "jquery-1.10.2",
-            "jquery-ui":"jquery-ui-1.11.4/jquery-ui"
-        },
-        shim: {
-            "GeoserverTerrainProvider": ["Cesium"]
-        }
-    });*/
-    </script>
-  <!--script src="../../Source/Cesium.js"></script-->
-  <!--script src="../GTP.js" type="text/javascript"></script-->
-  <!--script src="../../jquery-1.10.2.js"></script-->
-  <!--script src="../../jquery-ui-1.11.4/jquery-ui.js"></script-->
-  <!--script type="text/javascript" src="plotly-latest.min.js"></script-->
-  <style>
-      @import url(../../Build/Cesium/Widgets/widgets.css);
-	  @import url(jquery-ui-themes-1.11.4/themes/smoothness/jquery-ui.css);
-      html, body, #cesiumContainer {
-          width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
-      }
-	  .toolbar-left {
-            display: block;
-            position: absolute;
-            top: 5px;
-            left: 5px;
-        }
-		.no-close .ui-dialog-titlebar-close {
-		display: none;
-		}
-  </style>
-</head>
-<body>
-  <div id="cesiumContainer"></div>
-  <canvas id="canvas" width="512" height="512"></canvas>
-	<div id="dialog1" title="Enter the sampling distance in meters" height="100px" width="1000px">
-		<input type="number" id="sample_dist">
-		<p id="demo"></p>
-	</div>
-	<div id="dialog2" title="Choose Points" height="100px" width="1000px">
-		<p id="demo1"></p>
-	</div>  
-
-<div class="toolbar-left">
-<!--button id="IV">Initial View</button-->
-<button id="TP">Terrain Profile</button>
-<!--button id="View_graph">View Graph</button-->
-<!--button id="lighting">Toggle Lighting</button-->
-<!--button id="rem">Remove All</button-->
-</div>   
-  <!-- <script src="terrain_profile.js"></script> -->
-  <script>
-  
-    require(['jquery','Cesium','plotly-latest.min.js'], function(jQuery,Cesium,Plotly) {
+require(['jquery','Cesium','plotly-latest.min.js'], function(jQuery,Cesium,Plotly) {
         //"use strict";
     require(['jquery-ui'], function() {
         //"use strict";
@@ -159,8 +90,7 @@ var blp2 = new Cesium.BaseLayerPicker('baseLayerPickerContainer',  {
         layers: 'bhuvan_imagery'
     }));*/
 
-///////////////////////////////////////////////////////////////////////////////// GTP start
-
+/////////////////////////////////////////////////////////////////////////////////
 	(function() {
 	var OGCHelper = {};
 	var intersectionRectangle=function(rectangle0,rectangle1){
@@ -1132,7 +1062,7 @@ var blp2 = new Cesium.BaseLayerPicker('baseLayerPickerContainer',  {
 
 		function TerrainParser(promise,provider){
 			Cesium.when(promise,function(resultat){
-				console.log(resultat);
+				//console.log(resultat);
 				if(Cesium.defined(resultat)&&(resultat.ready)){
 					resultat.levelZeroMaximumGeometricError = Cesium.TerrainProvider.getEstimatedLevelZeroGeometricErrorForAHeightmap(
 						resultat.tilingScheme.ellipsoid, resultat.heightMapWidth,
@@ -1285,23 +1215,24 @@ function terrainChildrenMask(x, y, level,provider){
 }
 
 Cesium.GeoserverTerrainProvider = GeoserverTerrainProvider;
-})();
-///////////////////////////////////////////////////////////////////////////////// GTP end	
+})();	
+		
+/////////////////////////////////////////////////////////////////////////////////		
 	// LOAD TERRAIN
     //alert("hello");
 	var terrainProvider = new Cesium.GeoserverTerrainProvider({
 	//var terrainProvider = new Cesium.CesiumTerrainProvider({
 		//proxy : new Cesium.DefaultProxy('proxy.php'),
-		service : "WMTS",
-        url : "http://localhost:8080/geoserver/gwc/service/wmts",
-        //url : "http://localhost:8080/geoserver/elevation/wms",
+		//service : "WMTS",
+        //url : "http://localhost:8080/geoserver/gwc/service/wmts",
+        url : "http://localhost:8080/geoserver/elevation/wms",
 		//url : '//assets.agi.com/stk-terrain/world',
 		//requestWaterMask : true,
 		//requestVertexNormals : true,
 		//url : 'http://localhost/cgi-bin/proxy.cgi',
         //layerName: "SRTM_1km",
-		//layerName: "srtm_global_90m_tiled",
-        layerName: "elevation:srtm_global_90m_translated",
+		layerName: "srtm_global_90m_tiled",
+        //layerName: "elevation:srtm_global_90m_translated",
         //layerName: "srtm_global_90m_translated"
 		//hasStyledImage: false,
 		//styleName:"grayToColor",
@@ -1649,13 +1580,7 @@ Cesium.GeoserverTerrainProvider = GeoserverTerrainProvider;
 	}
 //////////////////////////////////////////////////////////////////////////////////// test
 
+
 /////////////////////////////////////////////////////////////////////////////////////	
   });
-});  
-  </script>
-
- <div id="dialog" title="Terrain Profile">
-		<div id="tester" style="width:512px;height:400px;"></div>
-	</div> 
-</body>
-</html>
+}); 
